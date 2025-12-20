@@ -2,59 +2,58 @@
 ==================================================================
 GOOGLE FETCHING MODULE
 ------------------------------------------------------------------
-This module is responsible for direct, authenticated access to the 
-Google Ads API, encapsulating all logic required to 
-fetch raw campaign, ad, creative, and metadata records.
+This module handles authenticated data retrieval from the Google 
+Marketing API, consolidating all campaign, ad, creative, and metadata 
+fetching logic into a unified, maintainable structure for ingestion.
 
-It provides a clean interface to centralize API-related operations, 
-enabling reusable, testable, and isolated logic for data ingestion 
-pipelines without mixing transformation or storage responsibilities.
+It ensures reliable access to Google Ads data with controlled rate 
+limits, standardized field mapping, and structured outputs for 
+downstream enrichment and transformation stages.
 
-✔️ Initializes secure Google Ads Client and retrieves credentials dynamically  
-✔️ Fetches data via API calls (with pagination) and returns structured DataFrames  
-✔️ Does not handle Google BigQuery upload, schema validation, or enrichment logic
+✔️ Initializes secure Google SDK sessions and retrieves credentials  
+✔️ Fetches campaign, ad, and creative data via authenticated API calls  
+✔️ Handles pagination, rate limiting and error retries automatically  
+✔️ Returns normalized and schema-ready DataFrames for processing  
+✔️ Logs detailed runtime information for monitoring and debugging  
 
-⚠️ This module focuses only on *data retrieval from the API*. 
-It does not handle schema validation, data transformation, or 
+⚠️ This module focuses solely on data retrieval and extraction.  
+It does not perform schema enforcement, data enrichment, or 
 storage operations such as uploading to BigQuery.
 ==================================================================
 """
+
 # Add root directory to sys.path for absolute imports of internal modules
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
 
-# Add logging ultilities for integraton
+# Add Python datetime utilities for integration
+from datetime import datetime
+
+# Add Python logging ultilities for integraton
 import logging
 
-# Add JSON ultilities for integration
+# Add Python JSON ultilities for integration
 import json
+
+# Add Python time ultilities for integration
+import time
+
+# Add Python IANA time zone ultilities for integration
+from zoneinfo import ZoneInfo
 
 # Add Python Pandas libraries for integration
 import pandas as pd
-
-# Add time ultilities for integration
-import time
 
 # Add Google Ads modules for integration
 from google.ads.googleads.client import GoogleAdsClient
 from google.ads.googleads.errors import GoogleAdsException
 
-# Add Google Authentication libraries for integration
-from google.api_core.exceptions import (
-    GoogleAPICallError,
-    NotFound,
-    PermissionDenied, 
-)
-from google.auth import default
-from google.auth.exceptions import DefaultCredentialsError
-from google.auth.transport.requests import AuthorizedSession
-
 # Add Google Secret Manager modules for integration
 from google.cloud import secretmanager
 
 # Add internal Google Ads modules for handling
-from src.schema import ensure_table_schema
+from src.schema import enforce_table_schema
 
 # Get environment variable for Company
 COMPANY = os.getenv("COMPANY") 
@@ -80,61 +79,59 @@ MODE = os.getenv("MODE")
 # 1. FETCH GOOGLE ADS METADATA
 
 # 1.1. Fetch Google Ads campaign metadata
-def fetch_campaign_metadata(campaign_id_list: list[str]) -> pd.DataFrame:
-    print(f"🚀 [FETCH] Starting to fetch Google Ads campaign metadata for {len(campaign_id_list)} campaign_id(s)...")
-    logging.info(f"🚀 [FETCH] Starting to fetch Google Ads campaign metadata for {len(campaign_id_list)} campaign_id(s)...")
+def fetch_campaign_metadata(fetch_campaign_ids: list[str]) -> pd.DataFrame:
+    print(f"🚀 [FETCH] Starting to fetch Google Ads campaign metadata for {len(fetch_campaign_ids)} campaign_id(s)...")
+    logging.info(f"🚀 [FETCH] Starting to fetch Google Ads campaign metadata for {len(fetch_campaign_ids)} campaign_id(s)...")
     
-    # 1.1.1. Validate input
-    if not campaign_id_list:
-        print("⚠️ [FETCH] Empty Google Ads campaign_id_list provided.")
-        logging.warning("⚠️ [FETCH] Empty Google Ads campaign_id_list provided.")
-        return pd.DataFrame()
+    # 1.1.1. Start timing the Google Ads campaign metadata fetching
+    ICT = ZoneInfo("Asia/Ho_Chi_Minh")    
+    fetch_time_start = time.time()   
+    fetch_sections_status = {}
+    fetch_sections_time = {}
+    print(f"🔍 [FETCH] Proceeding to fetch Google Ads campaign metadata at {datetime.now(ICT).strftime("%Y-%m-%d %H:%M:%S")}...")
+    logging.info(f"🔍 [FETCH] Proceeding to fetch Google Ads campaign metadata at {datetime.now(ICT).strftime("%Y-%m-%d %H:%M:%S")}...")
     
-    # 1.1.2. Prepare field(s)
-    fetch_fields = [
-        "campaign.id",
-        "campaign.name",
-        "campaign.status",
-        "campaign.advertising_channel_type",
-        "campaign.advertising_channel_sub_type",
-        "campaign.serving_status",
-        "campaign.start_date",
-        "campaign.end_date"
-    ]
-    all_records = []
-    print(f"🔄 [FETCH] Preparing to fetch Google Ads campaign metadata with {fetch_fields} field(s)...")
-    logging.info(f"🔄 [FETCH] Preparing to fetch Google Ads campaign metadata with {fetch_fields} field(s)...")
-
     try:
-    
-    # 1.1.3. Initialize Google Secret Manager client
+
+    # 1.1.2 Initialize Google Secret Manager client
+        fetch_section_name = "[FETCH] Initialize Google Secret Manager client"
+        fetch_section_start = time.time()                
         try:
             print(f"🔍 [FETCH] Initializing Google Secret Manager client for Google Cloud Platform project {PROJECT}...")
             logging.info(f"🔍 [FETCH] Initializing Google Secret Manager client for Google Cloud Platform project {PROJECT}...")
             google_secret_client = secretmanager.SecretManagerServiceClient()
+            fetch_sections_status[fetch_section_name] = "succeed"
             print(f"✅ [FETCH] Successfully initialized Google Secret Manager client for Google Cloud project {PROJECT}.")
-            logging.info(f"✅ [FETCH] Successfully initialized Google Secret Manager client for Google Cloud project {PROJECT}.")
-        except DefaultCredentialsError as e:
-            raise RuntimeError("❌ [FETCH] Failed to initialize Google Secret Manager client due to credentials error.") from e
-        except PermissionDenied as e:
-            raise RuntimeError("❌ [FETCH] Failed to initialize Google Secret Manager client due to permission denial.") from e
-        except NotFound as e:
-            raise RuntimeError("❌ [FETCH] Failed to initialize Google Secret Manager client because secret not found.") from e
-        except GoogleAPICallError as e:
-            raise RuntimeError("❌ [FETCH] Failed to initialize Google Secret Manager client due to API call error.") from e
+            logging.info(f"✅ [FETCH] Successfully initialized Google Secret Manager client for Google Cloud project {PROJECT}.")          
         except Exception as e:
-            raise RuntimeError(f"❌ [FETCH] Failed to initialize Google Secret Manager client due to unexpected error {e}.") from e
+            fetch_sections_status[fetch_section_name] = "failed"
+            print(f"❌ [FETCH] Failed to initialize Google Secret Manager client for Google Cloud Platform project {PROJECT} due to {e}.")
+            logging.error(f"❌ [FETCH] Failed to initialize Google Secret Manager client for Google Cloud Platform project {PROJECT} due to {e}.")
+        finally:
+            fetch_sections_time[fetch_section_name] = round(time.time() - fetch_section_start, 2) 
 
-    # 1.1.2. Prepare Google Secret id(s)
-        print(f"🔍 [FETCH] Retrieving Google Ads ad account information for {ACCOUNT} from Google Secret Manager...")
-        logging.info(f"🔍 [FETCH] Retrieving Google Ads ad account information for {ACCOUNT} from Google Secret Manager...")
-        google_secret_id = f"{COMPANY}_secret_{DEPARTMENT}_{PLATFORM}_account_id_{ACCOUNT}"
-        google_secret_name = f"projects/{PROJECT}/secrets/{google_secret_id}/versions/latest" 
-        response = google_secret_client.access_secret_version(request={"name": google_secret_name})
-        creds = json.loads(response.payload.data.decode("utf-8"))
-        customer_id = creds["customer_id"]
-        print(f"✅ [FETCH] Successfully retrieved Google Ads customer_id {customer_id} from Google Secret Manager secret_id {google_secret_id} for account environment variable {ACCOUNT}.")
-        logging.info(f"✅ [FETCH] Successfully retrieved Google Ads customer_id {customer_id} from Google Secret Manager secret_id {google_secret_id} for account environment variable {ACCOUNT}.")
+    # 1.1.3. Get Google Ads customer_id from Google Secret Manager
+        fetch_section_name = "[FETCH] Get Google Ads customer_id from Google Secret Manager"
+        fetch_section_start = time.time()           
+        try: 
+            print(f"🔍 [FETCH] Retrieving Google Ads customer_id for account {ACCOUNT} from Google Secret Manager...")
+            logging.info(f"🔍 [FETCH] Retrieving Google Ads customer_id for account {ACCOUNT} from Google Secret Manager...")
+            google_secret_id = f"{COMPANY}_secret_{DEPARTMENT}_{PLATFORM}_account_id_{ACCOUNT}"
+            google_secret_name = f"projects/{PROJECT}/secrets/{google_secret_id}/versions/latest" 
+            response = google_secret_client.access_secret_version(request={"name": google_secret_name})
+            creds = json.loads(response.payload.data.decode("utf-8"))
+            customer_id = creds["customer_id"]
+            print(f"✅ [FETCH] Successfully retrieved Google Ads customer_id {customer_id} from Google Secret Manager.")
+            logging.info(f"✅ [FETCH] Successfully retrieved Google Ads customer_id {customer_id} from Google Secret Manager.")
+        except Exception as e:
+            fetch_sections_status[fetch_section_name] = "failed"
+            print(f"❌ [FETCH] Failed to retrieve Google Ads advertiser_id for {ACCOUNT} from Google Secret Manager due to {e}.")
+            logging.error(f"❌ [FETCH] Failed to retrieve Google Ads advertiser_id for {ACCOUNT} from Google Secret Manager due to {e}.")
+        finally:
+            fetch_sections_time[fetch_section_name] = round(time.time() - fetch_section_start, 2)
+
+    try:
+
     
     # 1.1.3. Initialize Google Ads client
         try:
@@ -143,28 +140,31 @@ def fetch_campaign_metadata(campaign_id_list: list[str]) -> pd.DataFrame:
             google_ads_client = GoogleAdsClient.load_from_dict(creds, version="v16")
             print(f"✅ [FETCH] Successfully initialized Google Ads client for customer_id {customer_id}.")
             logging.info(f"✅ [FETCH] Successfully initialized Google Ads client for customer_id {customer_id}.")
-        except DefaultCredentialsError as e:
-            raise RuntimeError("❌ [FETCH] Failed to initialize Google Ads client due to credentials error.") from e
-        except PermissionDenied as e:
-            raise RuntimeError("❌ [FETCH] Failed to initialize Google Ads client due to permission denial.") from e
-        except NotFound as e:
-            raise RuntimeError("❌ [FETCH] Failed to initialize Google Ads client because a resource not found.") from e
-        except GoogleAdsException as e:
-            raise RuntimeError(f"❌ [FETCH] Failed to initialize Google Ads client due to {e.error.code} when API responded.") from e
-        except GoogleAPICallError as e:
-            raise RuntimeError(f"❌ [FETCH] Failed to initialize Google Ads client due to {e} when API not responed.") from e
         except Exception as e:
             raise RuntimeError(f"❌ [FETCH] Failed to initialize Google Ads client due to unexpected error {e}.") from e
 
-    # 1.1.4. Loop through campaign_id(s)
+    # 1.1.4. Make Google Ads API call for campaign metadata
+        fetch_section_name = "[FETCH] Make Google Ads API call for campaign metadata"
+        fetch_section_start = time.time()           
         try:
+            fetch_fields = [
+                "campaign.id",
+                "campaign.name",
+                "campaign.status",
+                "campaign.advertising_channel_type",
+                "campaign.advertising_channel_sub_type",
+                "campaign.serving_status",
+                "campaign.start_date",
+                "campaign.end_date"
+            ]
+            all_records = []            
             print(f"🔍 [FETCH] Retrieving campaign metadata for {len(campaign_id_list)} Google Ads campaign_id(s)...")
             logging.info(f"🔍 [FETCH] Retrieving campaign metadata for {len(campaign_id_list)} Google Ads campaign_id(s)...")
             ids_str = ",".join(map(str, campaign_id_list))
             query = f"SELECT {', '.join(fetch_fields)} FROM campaign WHERE campaign.id IN ({ids_str})"
             google_ads_service = google_ads_client.get_service("GoogleAdsService")
-            response = google_ads_service.search(customer_id=customer_id, query=query)
-            for row in response:
+            fetch_campaign_response = google_ads_service.search(customer_id=customer_id, query=query)
+            for row in fetch_campaign_response:
                 record = {
                     "campaign_id": row.campaign.id,
                     "campaign_name": row.campaign.name,
