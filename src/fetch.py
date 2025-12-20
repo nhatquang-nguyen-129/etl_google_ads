@@ -54,7 +54,7 @@ from google.auth.transport.requests import AuthorizedSession
 from google.cloud import secretmanager
 
 # Add internal Google Ads modules for handling
-from config.schema import ensure_table_schema
+from src.schema import ensure_table_schema
 
 # Get environment variable for Company
 COMPANY = os.getenv("COMPANY") 
