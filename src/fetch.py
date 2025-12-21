@@ -119,10 +119,10 @@ def fetch_campaign_metadata(fetch_campaign_ids: list[str]) -> pd.DataFrame:
             customer_secret_id = f"{COMPANY}_secret_{DEPARTMENT}_{PLATFORM}_account_id_{ACCOUNT}"
             customer_secret_name = f"projects/{PROJECT}/secrets/{customer_secret_id}/versions/latest"
             customer_secret_response = google_secret_client.access_secret_version(request={"name": customer_secret_name})
-            fetch_account_id = customer_secret_response.payload.data.decode("utf-8")
+            fetch_customer_id = customer_secret_response.payload.data.decode("utf-8")
             fetch_sections_status[fetch_section_name] = "succeed"
-            print(f"✅ [FETCH] Successfully retrieved Google Ads customer_id {fetch_account_id} from Google Secret Manager.")
-            logging.info(f"✅ [FETCH] Successfully retrieved Google Ads customer_id {fetch_account_id} from Google Secret Manager.")
+            print(f"✅ [FETCH] Successfully retrieved Google Ads customer_id {fetch_customer_id} from Google Secret Manager.")
+            logging.info(f"✅ [FETCH] Successfully retrieved Google Ads customer_id {fetch_customer_id} from Google Secret Manager.")
         except Exception as e:
             fetch_sections_status[fetch_section_name] = "failed"
             print(f"❌ [FETCH] Failed to retrieve Google Ads customer_id from Google Secret Manager due to {e}.")
@@ -156,7 +156,11 @@ def fetch_campaign_metadata(fetch_campaign_ids: list[str]) -> pd.DataFrame:
         try:            
             print(f"🔍 [FETCH] Initializing Google Ads client for {ACCOUNT} with OAuth2 credentials...")
             logging.info(f"🔍 [FETCH] Initializing Google Ads client for {ACCOUNT} with OAuth2 credentials...")
-            google_ads_client = GoogleAdsClient.load_from_dict(fetch_access_user, version="v16")
+            google_ads_client = GoogleAdsClient.load_from_dict(
+                fetch_access_user, 
+                version="v22"
+            )
+            google_ads_service = google_ads_client.get_service("GoogleAdsService")
             fetch_sections_status[fetch_section_name] = "succeed"
             print(f"✅ [FETCH] Successfully initialized Google Ads client for account {ACCOUNT} with OAuth2 credentials.")
             logging.info(f"✅ [FETCH] Successfully initialized Google Ads client for account {ACCOUNT} with OAuth2 credentials.")
@@ -177,11 +181,10 @@ def fetch_campaign_metadata(fetch_campaign_ids: list[str]) -> pd.DataFrame:
                 FROM customer
                 LIMIT 1
             """
-            print(f"🔍 [FETCH] Retrieving Google Ads customer_descriptive_name for customer_id {fetch_account_id}...")
-            logging.info(f"🔍 [FETCH] Retrieving Google Ads customer_descriptive_name for customer_id {fetch_account_id}...")
-            google_ads_service = google_ads_client.get_service("GoogleAdsService")
+            print(f"🔍 [FETCH] Retrieving Google Ads customer_descriptive_name for customer_id {fetch_customer_id}...")
+            logging.info(f"🔍 [FETCH] Retrieving Google Ads customer_descriptive_name for customer_id {fetch_customer_id}...")            
             fetch_customer_responses = google_ads_service.search(
-                customer_id=fetch_account_id,
+                customer_id=fetch_customer_id,
                 query=query_select_config
             )
             for fetch_customer_response in fetch_customer_responses:
@@ -189,8 +192,8 @@ def fetch_campaign_metadata(fetch_campaign_ids: list[str]) -> pd.DataFrame:
                 break
             if fetch_customer_name:
                 fetch_sections_status[fetch_section_name] = "succeed"
-                print(f"✅ [FETCH] Successfully retrieved Google Ads customer_descriptive_name {fetch_customer_name} for customer_id {fetch_account_id}.")
-                logging.info(f"✅ [FETCH] Successfully retrieved Google Ads customer_descriptive_name {fetch_customer_name} for customer_id {fetch_account_id}.")
+                print(f"✅ [FETCH] Successfully retrieved Google Ads customer_descriptive_name {fetch_customer_name} for customer_id {fetch_customer_id}.")
+                logging.info(f"✅ [FETCH] Successfully retrieved Google Ads customer_descriptive_name {fetch_customer_name} for customer_id {fetch_customer_id}.")
             else:
                 fetch_sections_status[fetch_section_name] = "failed"
                 print(f"❌ [FETCH] Failed to retrieve Google Ads customer_descriptive_name due to data not found.")
@@ -206,61 +209,74 @@ def fetch_campaign_metadata(fetch_campaign_ids: list[str]) -> pd.DataFrame:
         fetch_section_name = "[FETCH] Make Google Ads API call for campaign metadata"
         fetch_section_start = time.time()           
         try:
+            fetch_campaign_metadatas = []            
             fetch_campaign_fields = [
                 "campaign.id",
                 "campaign.name",
                 "campaign.status",
-                "campaign.advertising_channel_type",
-                "campaign.advertising_channel_sub_type",
-                "campaign.serving_status",
-                "campaign.start_date",
-                "campaign.end_date"
+                "campaign.serving_status"
             ]
-            all_records = []            
-            print(f"🔍 [FETCH] Retrieving campaign metadata for {len(campaign_id_list)} Google Ads campaign_id(s)...")
-            logging.info(f"🔍 [FETCH] Retrieving campaign metadata for {len(campaign_id_list)} Google Ads campaign_id(s)...")
-            ids_str = ",".join(map(str, campaign_id_list))
-            query = f"SELECT {', '.join(fetch_fields)} FROM campaign WHERE campaign.id IN ({ids_str})"
-            google_ads_service = google_ads_client.get_service("GoogleAdsService")
-            fetch_campaign_response = google_ads_service.search(customer_id=customer_id, query=query)
-            for row in fetch_campaign_response:
-                record = {
-                    "campaign_id": row.campaign.id,
-                    "campaign_name": row.campaign.name,
-                    "status": row.campaign.status.name,
-                    "channel_type": row.campaign.advertising_channel_type.name,
-                    "channel_sub_type": row.campaign.advertising_channel_sub_type.name,
-                    "serving_status": row.campaign.serving_status.name,
-                    "start_date": row.campaign.start_date,
-                    "end_date": row.campaign.end_date,
-                    "account_id": customer_id,
+            query_select_config = f"""
+                SELECT
+                    {', '.join(fetch_campaign_fields)}
+                FROM campaign
+                WHERE campaign.id IN ({', '.join(map(str, fetch_campaign_ids))})
+            """     
+            print(f"🔍 [FETCH] Retrieving Google Ads campaign metadata for {len(fetch_campaign_ids)} campaign_id(s)...")
+            logging.info(f"🔍 [FETCH] Retrieving Google Ads campaign metadata for {len(fetch_campaign_ids)} campaign_id(s)...")
+            fetch_campaign_responses = google_ads_service.search(
+                customer_id=fetch_customer_id, 
+                query=query_select_config
+            )
+            for fetch_campaign_response in fetch_campaign_responses:
+                fetch_campaign_metadata = {
+                    "campaign_id": fetch_campaign_response.campaign.id,
+                    "campaign_name": fetch_campaign_response.campaign.name,
+                    "campaign_status_name": fetch_campaign_response.campaign.status.name,
+                    "customer_id": fetch_customer_id,
+                    "customer_descriptive_name": fetch_customer_name,
                 }
-                all_records.append(record)
-        except Exception as e:
-            print(f"❌ [FETCH] Failed to campaign metadata for Google Ads due to {e}.")
-            logging.error(f"❌ [FETCH] Failed to campaign metadata for Google Ads due to {e}.")
-            return pd.DataFrame()
+                fetch_campaign_metadatas.append(fetch_campaign_metadata)
+            fetch_df_flattened = pd.DataFrame(fetch_campaign_metadatas)
+            if len(fetch_campaign_metadatas) == len(fetch_campaign_ids):
+                fetch_sections_status[fetch_section_name] = "succeed"
+                print(f"✅ [FETCH] Successfully retrieved Google Ads campaign metadata with {len(fetch_campaign_metadatas)}/{len(fetch_campaign_ids)} campaign_id(s) for customer_id {fetch_customer_id}.")
+                logging.info(f"✅ [FETCH] Successfully retrieved Google Ads campaign metadata with {len(fetch_campaign_metadatas)}/{len(fetch_campaign_ids)} campaign_id(s) for customer_id {fetch_customer_id}.")
+            elif len(fetch_campaign_ids) > 0 and len(fetch_campaign_metadatas) < len(fetch_campaign_ids):
+                fetch_sections_status[fetch_section_name] = "partial"
+                print(f"⚠️ [FETCH] Partially retrieved Google Ads campaign metadata with {len(fetch_campaign_metadatas)}/{len(fetch_campaign_ids)} campaign_id(s) for customer_id {fetch_customer_id}.")
+                logging.warning(f"⚠️ [FETCH] Partially retrieved Google Ads campaign metadata with {len(fetch_campaign_metadatas)}/{len(fetch_campaign_ids)} campaign_id(s) for customer_id {fetch_customer_id}.")
+            else:
+                fetch_sections_status[fetch_section_name] = "failed"
+                print(f"❌ [FETCH] Failed to retrieve Google Ads campaign metadata with {len(fetch_campaign_metadatas)}/{len(fetch_campaign_ids)} campaign_id(s) for customer_id {fetch_customer_id}.")
+                logging.error(f"❌ [FETCH] Failed to retrieve Google Ads campaign metadata with {len(fetch_campaign_metadatas)}/{len(fetch_campaign_ids)} campaign_id(s) for customer_id {fetch_customer_id}.")
+        finally:
+            fetch_sections_time[fetch_section_name] = round(time.time() - fetch_section_start, 2)
 
-    # 1.1.5. Convert to Python DataFrame
-        if not all_records:
-            print("⚠️ [FETCH] No Google Ads campaign metadata fetched.")
-            logging.warning("⚠️ [FETCH] No Google Ads campaign metadata fetched.")
-            return pd.DataFrame()
+    # 1.1.8. Trigger to enforce schema for Google Ads campaign metadata
+        fetch_section_name = "[FETCH] Trigger to enforce schema for Google Ads campaign metadata"
+        fetch_section_start = time.time()
         try:
-            print(f"🔄 [FETCH] Converting metadata for {len(campaign_id_list)} campaign_id(s) to DataFrame...")
-            logging.info(f"🔄 [FETCH] Converting metadata for {len(campaign_id_list)} campaign_id(s) to DataFrame...")
-            df = pd.DataFrame(all_records)
-            print(f"✅ [FETCH] Successfully converted metadata to DataFrame with {len(df)} row(s).")
-            logging.info(f"✅ [FETCH] Successfully converted metadata to DataFrame with {len(df)} row(s).")
-        except Exception as e:
-            print(f"❌ [FETCH] Failed to convert metadata to DataFrame: {e}")
-            logging.error(f"❌ [FETCH] Failed to convert metadata to DataFrame: {e}")
-            return pd.DataFrame()
-        return df
-    except Exception as e:
-        print(f"❌ [FETCH] Unexpected error: {e}")
-        logging.error(f"❌ [FETCH] Unexpected error: {e}")
-        return pd.DataFrame()
+            print(f"🔄 [FETCH] Trigger to enforce schema for Google Ads campaign metadata with {len(fetch_df_flattened)} row(s)...")
+            logging.info(f"🔄 [FETCH] Trigger to enforce schema for Google Ads campaign metadata with {len(fetch_df_flattened)} row(s)...")            
+            fetch_results_schema = enforce_table_schema(fetch_df_flattened, "fetch_campaign_metadata")            
+            fetch_df_enforced = fetch_results_schema["schema_df_final"]
+            fetch_summary_enforced = fetch_results_schema["schema_summary_final"]
+            fetch_status_enforced = fetch_results_schema["schema_status_final"]            
+            if fetch_status_enforced == "schema_succeed_all":
+                fetch_sections_status[fetch_section_name] = "succeed"
+                print(f"✅ [FETCH] Successfully triggered Google Ads campaign metadata schema enforcement with {fetch_summary_enforced['schema_rows_output']}/{fetch_summary_enforced['schema_rows_input']} enforced row(s) in {fetch_summary_enforced['schema_time_elapsed']}s.")
+                logging.info(f"✅ [FETCH] Successfully triggered Google Ads campaign metadata schema enforcement with {fetch_summary_enforced['schema_rows_output']}/{fetch_summary_enforced['schema_rows_input']} enforced row(s) in {fetch_summary_enforced['schema_time_elapsed']}s.")
+            elif fetch_status_enforced == "schema_succeed_partial":
+                fetch_sections_status[fetch_section_name] = "partial"
+                print(f"⚠️ [FETCH] Partially triggered Google Ads campaign metadata schema enforcement with {fetch_summary_enforced['schema_rows_output']}/{fetch_summary_enforced['schema_rows_input']} enforced row(s) in {fetch_summary_enforced['schema_time_elapsed']}s.")
+                logging.warning(f"⚠️ [FETCH] Partially triggered Google Ads campaign metadata schema enforcement with {fetch_summary_enforced['schema_rows_output']}/{fetch_summary_enforced['schema_rows_input']} enforced row(s) in {fetch_summary_enforced['schema_time_elapsed']}s.")
+            else:
+                fetch_sections_status[fetch_section_name] = "failed"
+                print(f"❌ [FETCH] Failed to trigger Google Ads campaign metadata schema enforcement with {fetch_summary_enforced['schema_rows_output']}/{fetch_summary_enforced['schema_rows_input']} enforced row(s) in {fetch_summary_enforced['schema_time_elapsed']}s.")
+                logging.error(f"❌ [FETCH] Failed to trigger Google Ads campaign metadata schema enforcement with {fetch_summary_enforced['schema_rows_output']}/{fetch_summary_enforced['schema_rows_input']} enforced row(s) in {fetch_summary_enforced['schema_time_elapsed']}s.")
+        finally:
+            fetch_sections_time[fetch_section_name] = round(time.time() - fetch_section_start, 2)
     
     # 1.1.9. Summarize fetch results for Google Ads campaign metadata
     finally:
