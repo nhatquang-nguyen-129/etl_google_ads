@@ -112,42 +112,101 @@ def fetch_campaign_metadata(fetch_campaign_ids: list[str]) -> pd.DataFrame:
 
     # 1.1.3. Get Google Ads customer_id from Google Secret Manager
         fetch_section_name = "[FETCH] Get Google Ads customer_id from Google Secret Manager"
-        fetch_section_start = time.time()           
-        try: 
+        fetch_section_start = time.time()         
+        try:
             print(f"🔍 [FETCH] Retrieving Google Ads customer_id for account {ACCOUNT} from Google Secret Manager...")
             logging.info(f"🔍 [FETCH] Retrieving Google Ads customer_id for account {ACCOUNT} from Google Secret Manager...")
-            google_secret_id = f"{COMPANY}_secret_{DEPARTMENT}_{PLATFORM}_account_id_{ACCOUNT}"
-            google_secret_name = f"projects/{PROJECT}/secrets/{google_secret_id}/versions/latest" 
-            response = google_secret_client.access_secret_version(request={"name": google_secret_name})
-            creds = json.loads(response.payload.data.decode("utf-8"))
-            customer_id = creds["customer_id"]
-            print(f"✅ [FETCH] Successfully retrieved Google Ads customer_id {customer_id} from Google Secret Manager.")
-            logging.info(f"✅ [FETCH] Successfully retrieved Google Ads customer_id {customer_id} from Google Secret Manager.")
+            customer_secret_id = f"{COMPANY}_secret_{DEPARTMENT}_{PLATFORM}_account_id_{ACCOUNT}"
+            customer_secret_name = f"projects/{PROJECT}/secrets/{customer_secret_id}/versions/latest"
+            customer_secret_response = google_secret_client.access_secret_version(request={"name": customer_secret_name})
+            fetch_account_id = customer_secret_response.payload.data.decode("utf-8")
+            fetch_sections_status[fetch_section_name] = "succeed"
+            print(f"✅ [FETCH] Successfully retrieved Google Ads customer_id {fetch_account_id} from Google Secret Manager.")
+            logging.info(f"✅ [FETCH] Successfully retrieved Google Ads customer_id {fetch_account_id} from Google Secret Manager.")
         except Exception as e:
             fetch_sections_status[fetch_section_name] = "failed"
-            print(f"❌ [FETCH] Failed to retrieve Google Ads advertiser_id for {ACCOUNT} from Google Secret Manager due to {e}.")
-            logging.error(f"❌ [FETCH] Failed to retrieve Google Ads advertiser_id for {ACCOUNT} from Google Secret Manager due to {e}.")
+            print(f"❌ [FETCH] Failed to retrieve Google Ads customer_id from Google Secret Manager due to {e}.")
+            logging.error(f"❌ [FETCH] Failed to retrieve Google Ads customer_id from Google Secret Manager due to {e}.")
         finally:
             fetch_sections_time[fetch_section_name] = round(time.time() - fetch_section_start, 2)
 
-    try:
-
-    
-    # 1.1.3. Initialize Google Ads client
-        try:
-            print(f"🔍 [FETCH] Initializing Google Ads client for customer_id {customer_id} from Google Secret Manager account secret_id {google_secret_id}...")
-            logging.info(f"🔍 [FETCH] Initializing Google Ads client for customer_id {customer_id} from Google Secret Manager account secret_id {google_secret_id}...")
-            google_ads_client = GoogleAdsClient.load_from_dict(creds, version="v16")
-            print(f"✅ [FETCH] Successfully initialized Google Ads client for customer_id {customer_id}.")
-            logging.info(f"✅ [FETCH] Successfully initialized Google Ads client for customer_id {customer_id}.")
+    # 1.1.4. Get Google Ads OAuth2 credential from Google Secret Manager
+        fetch_section_name = "[FETCH] Get Google Ads OAuth2 credential from Google Secret Manager"
+        fetch_section_start = time.time()           
+        try: 
+            print(f"🔍 [FETCH] Retrieving Google Ads OAuth2 credentials for account {ACCOUNT} from Google Secret Manager...")
+            logging.info(f"🔍 [FETCH] Retrieving Google Ads OAuth2 credentials for account {ACCOUNT} from Google Secret Manager...")
+            credential_secret_id = f"{COMPANY}_secret_{DEPARTMENT}_{PLATFORM}_credential_access_user"
+            credential_secret_name = f"projects/{PROJECT}/secrets/{credential_secret_id}/versions/latest" 
+            crendential_secret_response = google_secret_client.access_secret_version(request={"name": credential_secret_name})
+            fetch_access_user = json.loads(crendential_secret_response.payload.data.decode("utf-8"))
+            fetch_sections_status[fetch_section_name] = "succeed"
+            print(f"✅ [FETCH] Successfully retrieved Google Ads OAuth2 credentials for account {ACCOUNT} from Google Secret Manager.")
+            logging.info(f"✅ [FETCH] Successfully retrieved Google Ads OAuth2 credentials for account {ACCOUNT} from Google Secret Manager.")
         except Exception as e:
-            raise RuntimeError(f"❌ [FETCH] Failed to initialize Google Ads client due to unexpected error {e}.") from e
+            fetch_sections_status[fetch_section_name] = "failed"
+            print(f"❌ [FETCH] Failed to retrieve Google Ads OAuth2 credentials from Google Secret Manager due to {e}.")
+            logging.error(f"❌ [FETCH] Failed to retrieve Google Ads OAuth2 credentials from Google Secret Manager due to {e}.")
+        finally:
+            fetch_sections_time[fetch_section_name] = round(time.time() - fetch_section_start, 2)
+    
+    # 1.1.5. Initialize Google Ads client from OAuth2 credentials
+        fetch_section_name = "[FETCH] Initialize Google Ads client from OAuth2 credentials"
+        fetch_section_start = time.time()
+        try:            
+            print(f"🔍 [FETCH] Initializing Google Ads client for {ACCOUNT} with OAuth2 credentials...")
+            logging.info(f"🔍 [FETCH] Initializing Google Ads client for {ACCOUNT} with OAuth2 credentials...")
+            google_ads_client = GoogleAdsClient.load_from_dict(fetch_access_user, version="v16")
+            fetch_sections_status[fetch_section_name] = "succeed"
+            print(f"✅ [FETCH] Successfully initialized Google Ads client for account {ACCOUNT} with OAuth2 credentials.")
+            logging.info(f"✅ [FETCH] Successfully initialized Google Ads client for account {ACCOUNT} with OAuth2 credentials.")
+        except Exception as e:
+            fetch_sections_status[fetch_section_name] = "failed"
+            print(f"❌ [FETCH] Failed to initialize Google Ads client with OAuth2 credentials due to {e}.")
+            logging.error(f"❌ [FETCH] Failed to initialize Google Ads client with OAuth2 credentials due to {e}.")
+        finally:
+            fetch_sections_time[fetch_section_name] = round(time.time() - fetch_section_start, 2)     
 
-    # 1.1.4. Make Google Ads API call for campaign metadata
+    # 1.1.6. Make Google Ads API call for ad account infomation
+        fetch_section_name = "[FETCH] Make Google Ads API call for ad account infomation"
+        fetch_section_start = time.time()        
+        try:
+            query_select_config = """
+                SELECT
+                    customer.descriptive_name
+                FROM customer
+                LIMIT 1
+            """
+            print(f"🔍 [FETCH] Retrieving Google Ads customer_descriptive_name for customer_id {fetch_account_id}...")
+            logging.info(f"🔍 [FETCH] Retrieving Google Ads customer_descriptive_name for customer_id {fetch_account_id}...")
+            google_ads_service = google_ads_client.get_service("GoogleAdsService")
+            fetch_customer_responses = google_ads_service.search(
+                customer_id=fetch_account_id,
+                query=query_select_config
+            )
+            for fetch_customer_response in fetch_customer_responses:
+                fetch_customer_name = fetch_customer_response.customer.descriptive_name
+                break
+            if fetch_customer_name:
+                fetch_sections_status[fetch_section_name] = "succeed"
+                print(f"✅ [FETCH] Successfully retrieved Google Ads customer_descriptive_name {fetch_customer_name} for customer_id {fetch_account_id}.")
+                logging.info(f"✅ [FETCH] Successfully retrieved Google Ads customer_descriptive_name {fetch_customer_name} for customer_id {fetch_account_id}.")
+            else:
+                fetch_sections_status[fetch_section_name] = "failed"
+                print(f"❌ [FETCH] Failed to retrieve Google Ads customer_descriptive_name due to data not found.")
+                logging.error(f"❌ [FETCH] Failed to retrieve Google Ads customer_descriptive_name due to data not found.")
+        except Exception as e:
+            fetch_sections_status[fetch_section_name] = "failed"
+            print(f"❌ [FETCH] Failed to retrieve Google Ads customer_descriptive_name due to {e}.")
+            logging.error(f"❌ [FETCH] Failed to retrieve Google Ads customer_descriptive_name due to {e}.")
+        finally:
+            fetch_sections_time[fetch_section_name] = round(time.time() - fetch_section_start, 2)
+    
+    # 1.1.7. Make Google Ads API call for campaign metadata
         fetch_section_name = "[FETCH] Make Google Ads API call for campaign metadata"
         fetch_section_start = time.time()           
         try:
-            fetch_fields = [
+            fetch_campaign_fields = [
                 "campaign.id",
                 "campaign.name",
                 "campaign.status",
@@ -202,6 +261,53 @@ def fetch_campaign_metadata(fetch_campaign_ids: list[str]) -> pd.DataFrame:
         print(f"❌ [FETCH] Unexpected error: {e}")
         logging.error(f"❌ [FETCH] Unexpected error: {e}")
         return pd.DataFrame()
+    
+    # 1.1.9. Summarize fetch results for Google Ads campaign metadata
+    finally:
+        fetch_time_elapsed = round(time.time() - fetch_time_start, 2)
+        fetch_df_final = fetch_df_enforced.copy() if "fetch_df_enforced" in locals() and not fetch_df_enforced.empty else pd.DataFrame()
+        fetch_sections_total = len(fetch_sections_status) 
+        fetch_sections_failed = [k for k, v in fetch_sections_status.items() if v == "failed"] 
+        fetch_sections_succeeded = [k for k, v in fetch_sections_status.items() if v == "succeed"]
+        fetch_rows_input = len(fetch_campaign_ids)
+        fetch_rows_output = len(fetch_df_final)
+        fetch_sections_summary = list(dict.fromkeys(
+            list(fetch_sections_status.keys()) +
+            list(fetch_sections_time.keys())
+        ))
+        fetch_sections_detail = {
+            fetch_section_summary: {
+                "status": fetch_sections_status.get(fetch_section_summary, "unknown"),
+                "time": fetch_sections_time.get(fetch_section_summary, None),
+            }
+            for fetch_section_summary in fetch_sections_summary
+        }          
+        if fetch_sections_failed:
+            fetch_status_final = "fetch_failed_all"
+            print(f"❌ [FETCH] Failed to complete Google Ads campaign metadata fetching with {fetch_rows_output}/{fetch_rows_input} fetched row(s) due to {', '.join(fetch_sections_failed)} failed section(s) in {fetch_time_elapsed}s.")
+            logging.error(f"❌ [FETCH] Failed to complete Google Ads campaign metadata fetching with {fetch_rows_output}/{fetch_rows_input} fetched row(s) due to {', '.join(fetch_sections_failed)} failed section(s) in {fetch_time_elapsed}s.")
+        elif fetch_rows_output == fetch_rows_input:
+            fetch_status_final = "fetch_succeed_all"
+            print(f"🏆 [FETCH] Successfully completed Google Ads campaign metadata fetching with {fetch_rows_output}/{fetch_rows_input} fetched row(s) in {fetch_time_elapsed}s.")
+            logging.info(f"🏆 [FETCH] Successfully completed Google Ads campaign metadata fetching with {fetch_rows_output}/{fetch_rows_input} fetched row(s) in {fetch_time_elapsed}s.")            
+        else:
+            fetch_status_final = "fetch_succeed_partial"
+            print(f"⚠️ [FETCH] Partially completed Google Ads campaign metadata fetching with {fetch_rows_output}/{fetch_rows_input} fetched row(s) in {fetch_time_elapsed}s.")
+            logging.warning(f"⚠️ [FETCH] Partially completed Google Ads campaign metadata fetching with {fetch_rows_output}/{fetch_rows_input} fetched row(s) in {fetch_time_elapsed}s.")         
+        fetch_results_final = {
+            "fetch_df_final": fetch_df_final,
+            "fetch_status_final": fetch_status_final,
+            "fetch_summary_final": {
+                "fetch_time_elapsed": fetch_time_elapsed, 
+                "fetch_sections_total": fetch_sections_total,
+                "fetch_sections_succeed": fetch_sections_succeeded, 
+                "fetch_sections_failed": fetch_sections_failed, 
+                "fetch_sections_detail": fetch_sections_detail, 
+                "fetch_rows_input": fetch_rows_input, 
+                "fetch_rows_output": fetch_rows_output
+            },
+        }
+    return fetch_results_final
 
 # 2. FETCH GOOGLE ADS INSIGHTS
 
