@@ -200,13 +200,13 @@ def ingest_campaign_metadata(ingest_campaign_ids: list) -> pd.DataFrame:
                 print(f"❌ [INGEST] Failed to check Google Ads campaign metadata table {raw_table_campaign} existence due to {e}.")
                 logging.error(f"❌ [INGEST] Failed to check Google Ads campaign metadata table {raw_table_campaign} existence due to {e}.")
             if not ingest_table_existed:
-                print(f"⚠️ [INGEST] Budget Allocation table {raw_table_budget} not found then table creation will be proceeding...")
-                logging.info(f"⚠️ [INGEST] Budget Allocation table {raw_table_budget} not found then table creation will be proceeding...")
+                print(f"⚠️ [INGEST] Google Ads campaign metadata table {raw_table_campaign} not found then table creation will be proceeding...")
+                logging.info(f"⚠️ [INGEST] Google Ads campaign metadata table {raw_table_campaign} not found then table creation will be proceeding...")
         
         # Configuration for table creation               
                 table_schemas_defined = []
-                table_clusters_defined = ["raw_date_month"]
-                table_partition_defined = "date"        
+                table_clusters_defined = []
+                table_partition_defined = []      
 
         # Definition for table schemas
                 if not table_schemas_defined:
@@ -242,10 +242,10 @@ def ingest_campaign_metadata(ingest_campaign_ids: list) -> pd.DataFrame:
         
         # Execute table creation                
                 try:    
-                    print(f"🔍 [INGEST] Creating Budget Allocation table defined name {raw_table_budget} with partition on {table_partition_effective} and cluster on {table_clusters_effective}...")
-                    logging.info(f"🔍 [INGEST] Creating Budget Allocation table defined name {raw_table_budget} with partition on {table_partition_effective} and cluster on {table_clusters_effective}...")
+                    print(f"🔍 [INGEST] Creating Google Ads campaign metadata table defined name {raw_table_campaign} with partition on {table_partition_effective} and cluster on {table_clusters_effective}...")
+                    logging.info(f"🔍 [INGEST] Creating Google Ads campaign metadata table defined name {raw_table_campaign} with partition on {table_partition_effective} and cluster on {table_clusters_effective}...")
                     table_configuration_defined = bigquery.Table(
-                        raw_table_budget,
+                        raw_table_campaign,
                         schema=table_schemas_effective
                     )
                     if table_partition_effective:
@@ -257,17 +257,20 @@ def ingest_campaign_metadata(ingest_campaign_ids: list) -> pd.DataFrame:
                         table_configuration_defined.clustering_fields = table_clusters_effective
                     query_table_create = google_bigquery_client.create_table(table_configuration_defined)
                     query_table_id = query_table_create.full_table_id
-                    print(f"✅ [INGEST] Successfully created Budget Allocation table actual name {query_table_id} with partition on {table_partition_effective} and cluster on {table_clusters_effective}.")
-                    logging.info(f"✅ [INGEST] Successfully created Budget Allocation table actual name {query_table_id} with partition on {table_partition_effective} and cluster on {table_clusters_effective}.")
+                    print(f"✅ [INGEST] Successfully created Google Ads campaign metadata table actual name {query_table_id} with partition on {table_partition_effective} and cluster on {table_clusters_effective}.")
+                    logging.info(f"✅ [INGEST] Successfully created Google Ads campaign metadata table actual name {query_table_id} with partition on {table_partition_effective} and cluster on {table_clusters_effective}.")
                 except Exception as e:
-                    print(f"❌ [INGEST] Failed to create Budget Allocation table {raw_table_budget} due to {e}.")
-                    logging.error(f"❌ [INGEST] Failed to create Budget Allocation table {raw_table_budget} due to {e}.")
+                    print(f"❌ [INGEST] Failed to create Google Ads campaign metadata table {raw_table_campaign} due to {e}.")
+                    logging.error(f"❌ [INGEST] Failed to create Google Ads campaign metadata table {raw_table_campaign} due to {e}.")
             else:
-                print(f"🔄 [INGEST] Found raw Budget Allocation table {raw_table_budget} then existing row(s) deletion will be proceeding...")
-                logging.info(f"🔄 [INGEST] Found raw Budget Allocation table {raw_table_budget} then existing row(s) deletion will be proceeding...")            
+                print(f"🔄 [INGEST] Found Google Ads campaign metadata table {raw_table_campaign} then existing rows deletion will be proceeding...")
+                logging.info(f"🔄 [INGEST] Found Google Ads campaign metadata table {raw_table_campaign} then existing rows deletion will be proceeding...")
         
         # Configuration for table delete keys
-                unique_keys_defined = ["raw_date_month"]                
+                unique_keys_defined = [
+                    "customer_id", 
+                    "campaign_id"
+                ]                
         
         # Definition for table delete keys
                 temporary_table_id = f"{PROJECT}.{raw_dataset}.temp_table_campaign_metadata_delete_keys_{uuid.uuid4().hex[:8]}"
@@ -281,8 +284,8 @@ def ingest_campaign_metadata(ingest_campaign_ids: list) -> pd.DataFrame:
 
         # Execute temporary table creation         
                 try:
-                    print(f"🔍 [INGEST] Creating temporary table contains duplicated Budget Allocation unique keys for batch deletion...")
-                    logging.info(f"🔍 [INGEST] Creating temporary table contains duplicated Budget Allocation unique keys for batch deletion...")
+                    print(f"🔍 [INGEST] Creating temporary table contains duplicated Google Ads campaign metadata unique keys for batch deletion...")
+                    logging.info(f"🔍 [INGEST] Creating temporary table contains duplicated Google Ads campaign metadata unique keys for batch deletion...")
                     job_load_config = bigquery.LoadJobConfig(write_disposition="WRITE_TRUNCATE")
                     job_load_load = google_bigquery_client.load_table_from_dataframe(
                         unique_keys_effective, 
@@ -291,11 +294,11 @@ def ingest_campaign_metadata(ingest_campaign_ids: list) -> pd.DataFrame:
                     )
                     job_load_result = job_load_load.result()
                     created_table_id = f"{job_load_load.destination.project}.{job_load_load.destination.dataset_id}.{job_load_load.destination.table_id}"
-                    print(f"✅ [INGEST] Successfully created temporary Budget Allocation table {created_table_id} for batch deletion.")
-                    logging.info(f"✅ [INGEST] Successfully created temporary Budget Allocation table {created_table_id} for batch deletion.")
+                    print(f"✅ [INGEST] Successfully created temporary Google Ads campaign metadata table {created_table_id} for batch deletion.")
+                    logging.info(f"✅ [INGEST] Successfully created temporary Google Ads campaign metadata table {created_table_id} for batch deletion.")
                 except Exception as e:
-                    print(f"❌ [INGEST] Failed to create temporary Budget Allocation table {temporary_table_id} for batch deletion due to {e}.")
-                    logging.error(f"❌ [INGEST] Failed to create temporary Budget Allocation table {temporary_table_id} for batch deletion due to {e}.")
+                    print(f"❌ [INGEST] Failed to create temporary Google Ads campaign metadata table {temporary_table_id} for batch deletion due to {e}.")
+                    logging.error(f"❌ [INGEST] Failed to create temporary Google Ads campaign metadata table {temporary_table_id} for batch deletion due to {e}.")
 
         # Configuration for table delete query
                 query_delete_condition = " AND ".join([
@@ -303,7 +306,7 @@ def ingest_campaign_metadata(ingest_campaign_ids: list) -> pd.DataFrame:
                     for col in unique_keys_effective
                 ])
                 query_delete_config = f"""
-                    DELETE FROM `{raw_table_budget}` AS main
+                    DELETE FROM `{raw_table_campaign}` AS main
                     WHERE EXISTS (
                         SELECT 1 FROM `{temporary_table_id}` AS temp
                         WHERE {query_delete_condition}
@@ -312,8 +315,8 @@ def ingest_campaign_metadata(ingest_campaign_ids: list) -> pd.DataFrame:
 
         # Execute batch delete                
                 try:                        
-                    print(f"🔍 [INGEST] Deleting existing row of Budget Allocation using batch deletion with unique key(s) {unique_keys_defined}...")
-                    logging.info(f"🔍 [INGEST] Deleting existing row of Budget Allocation using batch deletion with unique key(s) {unique_keys_defined}...")
+                    print(f"🔍 [INGEST] Deleting existing rows of Google Ads campaign metadata using batch deletion with unique key(s) {unique_keys_defined}...")
+                    logging.info(f"🔍 [INGEST] Deleting existing rows of Google Ads campaign metadata using batch deletion with unique key(s) {unique_keys_defined}...")
                     query_delete_load = google_bigquery_client.query(query_delete_config)
                     query_delete_result = query_delete_load.result()
                     ingest_rows_deleted = query_delete_result.num_dml_affected_rows
@@ -321,25 +324,25 @@ def ingest_campaign_metadata(ingest_campaign_ids: list) -> pd.DataFrame:
                         temporary_table_id, 
                         not_found_ok=True
                     )                    
-                    print(f"✅ [INGEST] Successfully deleted {ingest_rows_deleted} existing row(s) of Budget Allocation table {raw_table_budget}.")
-                    logging.info(f"✅ [INGEST] Successfully deleted {ingest_rows_deleted} existing row(s) of Budget Allocation table {raw_table_budget}.")
+                    print(f"✅ [INGEST] Successfully deleted {ingest_rows_deleted} existing row(s) of Google Ads campaign metadata table {raw_table_campaign}.")
+                    logging.info(f"✅ [INGEST] Successfully deleted {ingest_rows_deleted} existing row(s) of Google Ads campaign metadata table {raw_table_campaign}.")
                 except Exception as e:
-                    print(f"❌ [INGEST] Failed to delete existing rows of Budget Allocation table {raw_table_budget} by batch deletion due to {e}.")
-                    logging.error(f"❌ [INGEST] Failed to delete existing rows of Budget Allocation table {raw_table_budget} by batch deletion due to {e}.")
+                    print(f"❌ [INGEST] Failed to delete existing rows of Google Ads campaign metadata table {raw_table_campaign} by batch deletion due to {e}.")
+                    logging.error(f"❌ [INGEST] Failed to delete existing rows of Google Ads campaign metadata table {raw_table_campaign} by batch deletion due to {e}.")
             ingest_sections_status[ingest_section_name] = "succeed"
         except Exception as e:
             ingest_sections_status[ingest_section_name] = "failed"
-            print(f"❌ [INGEST] Failed to delete existing rows or create new table {raw_table_budget} if it not exist for Budget Allocation due to {e}.")
-            logging.error(f"❌ [INGEST] Failed to delete existing rows or create new table {raw_table_budget} if it not exist for Budget Allocation due to {e}.")
+            print(f"❌ [INGEST] Failed to delete existing rows or create new table {raw_table_campaign} if it not exist for Google Ads campaign metadata due to {e}.")
+            logging.error(f"❌ [INGEST] Failed to delete existing rows or create new table {raw_table_campaign} if it not exist for Google Ads campaign metadata due to {e}.")
         finally:
             ingest_sections_time[ingest_section_name] = round(time.time() - ingest_section_start, 2)
 
-    # 1.1.7. Upload TikTok Ads campaign metadata to Google BigQuery
-        ingest_section_name = "[INGEST] Upload TikTok Ads campaign metadata to Google BigQuery"
+    # 1.1.7. Upload Google Ads campaign metadata to Google BigQuery
+        ingest_section_name = "[INGEST] Upload Google Ads campaign metadata to Google BigQuery"
         ingest_section_start = time.time()
         try:
-            print(f"🔍 [INGEST] Uploading {len(ingest_df_deduplicated)} deduplicated row(s) of TikTok Ads campaign metadata to Google BigQuery table {raw_table_campaign}...")
-            logging.info(f"🔍 [INGEST] Uploading {len(ingest_df_deduplicated)} deduplicated row(s) of TikTok Ads campaign metadata to Google BigQuery table {raw_table_campaign}...")
+            print(f"🔍 [INGEST] Uploading {len(ingest_df_deduplicated)} deduplicated row(s) of Google Ads campaign metadata to Google BigQuery table {raw_table_campaign}...")
+            logging.info(f"🔍 [INGEST] Uploading {len(ingest_df_deduplicated)} deduplicated row(s) of Google Ads campaign metadata to Google BigQuery table {raw_table_campaign}...")
             job_load_config = bigquery.LoadJobConfig(write_disposition="WRITE_APPEND")
             job_load_load = google_bigquery_client.load_table_from_dataframe(
                 ingest_df_deduplicated, 
@@ -350,16 +353,16 @@ def ingest_campaign_metadata(ingest_campaign_ids: list) -> pd.DataFrame:
             ingest_rows_uploaded = job_load_load.output_rows
             ingest_df_uploaded = ingest_df_deduplicated.copy()
             ingest_sections_status[ingest_section_name] = "succeed"
-            print(f"✅ [INGEST] Successfully uploaded {ingest_rows_uploaded} row(s) of TikTok Ads campaign metadata to Google BigQuery table {raw_table_campaign}.")
-            logging.info(f"✅ [INGEST] Successfully uploaded {ingest_rows_uploaded} row(s) of TikTok Ads campaign metadata to Google BigQuery table {raw_table_campaign}.")
+            print(f"✅ [INGEST] Successfully uploaded {ingest_rows_uploaded} row(s) of Google Ads campaign metadata to Google BigQuery table {raw_table_campaign}.")
+            logging.info(f"✅ [INGEST] Successfully uploaded {ingest_rows_uploaded} row(s) of Google Ads campaign metadata to Google BigQuery table {raw_table_campaign}.")
         except Exception as e:
             ingest_sections_status[ingest_section_name] = "failed"
-            print(f"❌ [INGEST] Failed to upload TikTok Ads campaign metadata to Google BigQuery table {raw_table_campaign} due to {e}.")
-            logging.error(f"❌ [INGEST] Failed to upload TikTok Ads campaign metadata to Google BigQuery table {raw_table_campaign} due to {e}.")
+            print(f"❌ [INGEST] Failed to upload Google Ads campaign metadata to Google BigQuery table {raw_table_campaign} due to {e}.")
+            logging.error(f"❌ [INGEST] Failed to upload Google Ads campaign metadata to Google BigQuery table {raw_table_campaign} due to {e}.")
         finally:
             ingest_sections_time[ingest_section_name] = round(time.time() - ingest_section_start, 2)
 
-    # 1.1.8. Summarize ingestion results for TikTok Ads campaign metadata
+    # 1.1.8. Summarize ingestion results for Google Ads campaign metadata
     finally:
         ingest_time_elapsed = round(time.time() - ingest_time_start, 2)
         ingest_df_final = (ingest_df_uploaded.copy() if "ingest_df_uploaded" in locals() and not ingest_df_uploaded.empty else pd.DataFrame())
@@ -381,16 +384,16 @@ def ingest_campaign_metadata(ingest_campaign_ids: list) -> pd.DataFrame:
         }     
         if ingest_sections_failed:
             ingest_status_final = "ingest_failed_all"
-            print(f"❌ [INGEST] Failed to complete TikTok Ads campaign metadata ingestion with {ingest_rows_output}/{ingest_rows_input} ingested row(s) due to {', '.join(ingest_sections_failed)} failed section(s) in {ingest_time_elapsed}s.")
-            logging.error(f"❌ [INGEST] Failed to complete TikTok Ads campaign metadata ingestion with {ingest_rows_output}/{ingest_rows_input} ingested row(s) due to {', '.join(ingest_sections_failed)} failed section(s) in {ingest_time_elapsed}s.")            
+            print(f"❌ [INGEST] Failed to complete Google Ads campaign metadata ingestion with {ingest_rows_output}/{ingest_rows_input} ingested row(s) due to {', '.join(ingest_sections_failed)} failed section(s) in {ingest_time_elapsed}s.")
+            logging.error(f"❌ [INGEST] Failed to complete Google Ads campaign metadata ingestion with {ingest_rows_output}/{ingest_rows_input} ingested row(s) due to {', '.join(ingest_sections_failed)} failed section(s) in {ingest_time_elapsed}s.")            
         elif ingest_rows_output == ingest_rows_input:
             ingest_status_final = "ingest_succeed_all"
-            print(f"🏆 [INGEST] Successfully completed TikTok Ads campaign metadata ingestion with {ingest_rows_output}/{ingest_rows_input} ingested row(s) in {ingest_time_elapsed}s.")
-            logging.info(f"🏆 [INGEST] Successfully completed TikTok Ads campaign metadata ingestion with {ingest_rows_output}/{ingest_rows_input} ingested row(s) in {ingest_time_elapsed}s.")    
+            print(f"🏆 [INGEST] Successfully completed Google Ads campaign metadata ingestion with {ingest_rows_output}/{ingest_rows_input} ingested row(s) in {ingest_time_elapsed}s.")
+            logging.info(f"🏆 [INGEST] Successfully completed Google Ads campaign metadata ingestion with {ingest_rows_output}/{ingest_rows_input} ingested row(s) in {ingest_time_elapsed}s.")    
         else:
             ingest_status_final = "ingest_succeed_partial"
-            print(f"⚠️ [INGEST] Partially completed TikTok Ads campaign metadata ingestion with {ingest_rows_output}/{ingest_rows_input} ingested row(s) in {ingest_time_elapsed}s.")
-            logging.warning(f"⚠️ [INGEST] Partially completed TikTok Ads campaign metadata ingestion with {ingest_rows_output}/{ingest_rows_input} ingested row(s) in {ingest_time_elapsed}s.")        
+            print(f"⚠️ [INGEST] Partially completed Google Ads campaign metadata ingestion with {ingest_rows_output}/{ingest_rows_input} ingested row(s) in {ingest_time_elapsed}s.")
+            logging.warning(f"⚠️ [INGEST] Partially completed Google Ads campaign metadata ingestion with {ingest_rows_output}/{ingest_rows_input} ingested row(s) in {ingest_time_elapsed}s.")        
         ingest_results_final = {
             "ingest_df_final": ingest_df_final,
             "ingest_status_final": ingest_status_final,
