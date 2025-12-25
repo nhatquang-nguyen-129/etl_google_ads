@@ -108,6 +108,7 @@ def ingest_campaign_metadata(ingest_campaign_ids: list) -> pd.DataFrame:
     # 1.1.2. Trigger to fetch Google Ads campaign metadata
         ingest_section_name = "[INGEST] Trigger to fetch Google Ads campaign metadata"
         ingest_section_start = time.time()
+        
         try:
             print(f"🔁 [INGEST] Triggering to fetch Google Ads campaign metadata for {len(ingest_campaign_ids)} campaign_id(s)...")
             logging.info(f"🔁 [INGEST] Triggering to fetch Google Ads campaign metadata for {len(ingest_campaign_ids)} campaign_id(s)...")
@@ -127,12 +128,14 @@ def ingest_campaign_metadata(ingest_campaign_ids: list) -> pd.DataFrame:
                 ingest_sections_status[ingest_section_name] = "failed"
                 print(f"❌ [INGEST] Failed to trigger Google Ads campaign metadata fetching with {ingest_summary_fetched['fetch_rows_output']}/{ingest_summary_fetched['fetch_rows_input']} fetched row(s) in {ingest_summary_fetched['fetch_time_elapsed']}s.")
                 logging.error(f"❌ [INGEST] Failed to trigger Google Ads campaign metadata fetching with {ingest_summary_fetched['fetch_rows_output']}/{ingest_summary_fetched['fetch_rows_input']} fetched row(s) in {ingest_summary_fetched['fetch_time_elapsed']}s.")
+        
         finally:
             ingest_sections_time[ingest_section_name] = round(time.time() - ingest_section_start, 2)
 
     # 1.1.3. Trigger to enforce schema for Google Ads campaign metadata
         ingest_section_name = "[INGEST] Trigger to enforce schema for Google Ads campaign metadata"
         ingest_section_start = time.time()
+        
         try:
             print(f"🔄 [INGEST] Triggering to enforce schema for Google Ads campaign metadata with {len(ingest_df_fetched)} fetched row(s)...")
             logging.info(f"🔄 [INGEST] Triggering to enforce schema for Google Ads campaign metadata with {len(ingest_df_fetched)} fetched row(s)...")
@@ -152,24 +155,28 @@ def ingest_campaign_metadata(ingest_campaign_ids: list) -> pd.DataFrame:
                 ingest_sections_status[ingest_section_name] = "failed"
                 print(f"❌ [INGEST] Failed to trigger Google Ads campaign metadata schema enforcement with {ingest_summary_enforced['schema_rows_output']}/{len(ingest_df_fetched)} enforced row(s) in {ingest_summary_enforced['schema_time_elapsed']}s.")
                 logging.error(f"❌ [INGEST] Failed to trigger Google Ads campaign metadata schema enforcement with {ingest_summary_enforced['schema_rows_output']}/{len(ingest_df_fetched)} enforced row(s) in {ingest_summary_enforced['schema_time_elapsed']}s.")
+        
         finally:
             ingest_sections_time[ingest_section_name] = round(time.time() - ingest_section_start, 2)
 
     # 1.1.4. Prepare Google BigQuery table_id for ingestion
         ingest_section_name = "[INGEST] Prepare Google BigQuery table_id for ingestion"
         ingest_section_start = time.time()
+        
         try:
             raw_dataset = f"{COMPANY}_dataset_{PLATFORM}_api_raw"
             raw_table_campaign = f"{PROJECT}.{raw_dataset}.{COMPANY}_table_{PLATFORM}_{DEPARTMENT}_{ACCOUNT}_campaign_metadata"
             ingest_sections_status[ingest_section_name] = "succeed"   
             print(f"🔍 [INGEST] Preparing to ingest Google Ads campaign metadata for {len(ingest_df_fetched)} enforced row(s) to Google BigQuery table {raw_table_campaign}...")
             logging.info(f"🔍 [INGEST] Preparing to ingest Google Ads campaign metadata for {len(ingest_df_fetched)} enforced row(s) to Google BigQuery table {raw_table_campaign}...")
+        
         finally:
             ingest_sections_time[ingest_section_name] = round(time.time() - ingest_section_start, 2)
 
     # 1.1.5. Initialize Google BigQuery client
         ingest_section_name = "[INGEST] Initialize Google BigQuery client"
         ingest_section_start = time.time()
+        
         try:
             print(f"🔍 [INGEST] Initializing Google BigQuery client for Google Cloud Platform project {PROJECT}...")
             logging.info(f"🔍 [INGEST] Initializing Google BigQuery client for Google Cloud Platform project {PROJECT}...")
@@ -181,16 +188,20 @@ def ingest_campaign_metadata(ingest_campaign_ids: list) -> pd.DataFrame:
             ingest_sections_status[ingest_section_name] = "failed"
             print(f"❌ [INGEST] Failed to initialize Google BigQuery client for Google Cloud Platform project {PROJECT} due to {e}.")
             logging.error(f"❌ [INGEST] Failed to initialize Google BigQuery client for Google Cloud Platform project {PROJECT} due to {e}.")
+        
         finally:
             ingest_sections_time[ingest_section_name] = round(time.time() - ingest_section_start, 2)
 
-    # 1.1.6. Delete existing rows or create new table if it not exist
-        ingest_section_name = "[INGEST] Delete existing row(s) or create new table if it not exist"
+    # 1.1.6. Delete existing rows or create new table if not exist
+        ingest_section_name = "[INGEST] Delete existing rows or create new table if not exist"
         ingest_section_start = time.time()
+        
         try:
+            
             ingest_df_deduplicated = ingest_df_enforced.drop_duplicates()
+            
             try:
-                print(f"🔍 [INGEST] Checking Google Ads campaign metadata table {raw_table_campaign} existence...")
+                print(f"🔍 [INGEST] Checking Google Ads Ads campaign metadata table {raw_table_campaign} existence...")
                 logging.info(f"🔍 [INGEST] Checking Google Ads campaign metadata table {raw_table_campaign} existence...")
                 google_bigquery_client.get_table(raw_table_campaign)
                 ingest_table_existed = True
@@ -199,126 +210,144 @@ def ingest_campaign_metadata(ingest_campaign_ids: list) -> pd.DataFrame:
             except Exception:
                 print(f"❌ [INGEST] Failed to check Google Ads campaign metadata table {raw_table_campaign} existence due to {e}.")
                 logging.error(f"❌ [INGEST] Failed to check Google Ads campaign metadata table {raw_table_campaign} existence due to {e}.")
+            
             if not ingest_table_existed:
                 print(f"⚠️ [INGEST] Google Ads campaign metadata table {raw_table_campaign} not found then table creation will be proceeding...")
                 logging.info(f"⚠️ [INGEST] Google Ads campaign metadata table {raw_table_campaign} not found then table creation will be proceeding...")
         
-        # Configuration for table creation               
+        # Defined table creation               
                 table_schemas_defined = []
                 table_clusters_defined = []
                 table_partition_defined = []      
 
-        # Definition for table schemas
-                if not table_schemas_defined:
-                    table_schemas_effective = []
-                    for col, dtype in ingest_df_deduplicated.dtypes.items():
-                        if dtype.name.startswith("int"):
-                            bq_type = "INT64"
-                        elif dtype.name.startswith("float"):
-                            bq_type = "FLOAT64"
-                        elif dtype.name == "bool":
-                            bq_type = "BOOL"
-                        elif "datetime" in dtype.name:
-                            bq_type = "TIMESTAMP"
-                        else:
-                            bq_type = "STRING"
-                        table_schemas_effective.append(bigquery.SchemaField(col, bq_type))
-                else:
-                    table_schemas_effective = table_schemas_defined                                    
-        
-        # Definition for table partition     
-                table_partition_effective = (
+        # Config table creation
+                table_schemas_config = (
+                    table_schemas_defined
+                    if table_schemas_defined
+                    else [
+                        bigquery.SchemaField(
+                            col,
+                            "INT64" if dtype.name.startswith("int")
+                            else "FLOAT64" if dtype.name.startswith("float")
+                            else "BOOL" if dtype.name == "bool"
+                            else "TIMESTAMP" if "datetime" in dtype.name
+                            else "STRING"
+                        )
+                        for col, dtype in ingest_df_deduplicated.dtypes.items()
+                    ]
+                )
+            
+                table_partition_config = (
                     table_partition_defined
                     if table_partition_defined in ingest_df_deduplicated.columns
                     else None
                 )
         
-        # Definition for table clusters
-                table_clusters_effective = (
-                    [c for c in table_clusters_defined if c in ingest_df_deduplicated.columns]
+                table_clusters_config = (
+                    [col for col in table_clusters_defined if col in ingest_df_deduplicated.columns]
                     if table_clusters_defined
                     else None
                 )
         
         # Execute table creation                
                 try:    
-                    print(f"🔍 [INGEST] Creating Google Ads campaign metadata table defined name {raw_table_campaign} with partition on {table_partition_effective} and cluster on {table_clusters_effective}...")
-                    logging.info(f"🔍 [INGEST] Creating Google Ads campaign metadata table defined name {raw_table_campaign} with partition on {table_partition_effective} and cluster on {table_clusters_effective}...")
-                    table_configuration_defined = bigquery.Table(
+                    print(f"🔍 [INGEST] Creating Google Ads campaign metadata table defined name {raw_table_campaign} with partition on {table_partition_config} and cluster on {table_clusters_config}...")
+                    logging.info(f"🔍 [INGEST] Creating Google Ads campaign metadata table defined name {raw_table_campaign} with partition on {table_partition_config} and cluster on {table_clusters_config}...")
+                    create_table_config = bigquery.Table(
                         raw_table_campaign,
-                        schema=table_schemas_effective
+                        schema=table_schemas_config
                     )
-                    if table_partition_effective:
-                        table_configuration_defined.time_partitioning = bigquery.TimePartitioning(
+                    if table_partition_config:
+                        create_table_config.time_partitioning = bigquery.TimePartitioning(
                             type_=bigquery.TimePartitioningType.DAY,
-                            field=table_partition_effective
+                            field=table_partition_config
                         )
-                    if table_clusters_effective:
-                        table_configuration_defined.clustering_fields = table_clusters_effective
-                    query_table_create = google_bigquery_client.create_table(table_configuration_defined)
-                    query_table_id = query_table_create.full_table_id
-                    print(f"✅ [INGEST] Successfully created Google Ads campaign metadata table actual name {query_table_id} with partition on {table_partition_effective} and cluster on {table_clusters_effective}.")
-                    logging.info(f"✅ [INGEST] Successfully created Google Ads campaign metadata table actual name {query_table_id} with partition on {table_partition_effective} and cluster on {table_clusters_effective}.")
+                    if table_clusters_config:
+                        create_table_config.clustering_fields = table_clusters_config
+                    create_table_execute = google_bigquery_client.create_table(create_table_config)
+                    create_table_id = create_table_execute.full_table_id
+                    print(f"✅ [INGEST] Successfully created Google Ads campaign metadata table actual name {create_table_id} with partition on {table_partition_config} and cluster on {table_clusters_config}.")
+                    logging.info(f"✅ [INGEST] Successfully created Google Ads campaign metadata table actual name {create_table_id} with partition on {table_partition_config} and cluster on {table_clusters_config}.")
                 except Exception as e:
                     print(f"❌ [INGEST] Failed to create Google Ads campaign metadata table {raw_table_campaign} due to {e}.")
                     logging.error(f"❌ [INGEST] Failed to create Google Ads campaign metadata table {raw_table_campaign} due to {e}.")
+            
             else:
                 print(f"🔄 [INGEST] Found Google Ads campaign metadata table {raw_table_campaign} then existing rows deletion will be proceeding...")
                 logging.info(f"🔄 [INGEST] Found Google Ads campaign metadata table {raw_table_campaign} then existing rows deletion will be proceeding...")
         
-        # Configuration for table delete keys
+        # Define batch deletion              
                 unique_keys_defined = [
                     "customer_id", 
                     "campaign_id"
                 ]                
         
-        # Definition for table delete keys
-                temporary_table_id = f"{PROJECT}.{raw_dataset}.temp_table_campaign_metadata_delete_keys_{uuid.uuid4().hex[:8]}"
-                unique_keys_effective = (
-                        ingest_df_deduplicated[unique_keys_defined]
+            # Config batch deletion
+                unique_keys_config = [
+                    unique_key_defined
+                    for unique_key_defined in unique_keys_defined
+                    if unique_key_defined in ingest_df_deduplicated.columns
+                ]                
+        
+                if len(unique_keys_config) == 1:
+                    unique_keys_value = (
+                        ingest_df_deduplicated[unique_keys_config[0]]
                         .dropna()
-                        .drop_duplicates()
-                        if unique_keys_defined
-                        else None
-                )
-
-        # Execute temporary table creation         
-                try:
-                    print(f"🔍 [INGEST] Creating temporary table contains duplicated Google Ads campaign metadata unique keys for batch deletion...")
-                    logging.info(f"🔍 [INGEST] Creating temporary table contains duplicated Google Ads campaign metadata unique keys for batch deletion...")
-                    job_load_config = bigquery.LoadJobConfig(write_disposition="WRITE_TRUNCATE")
-                    job_load_load = google_bigquery_client.load_table_from_dataframe(
-                        unique_keys_effective, 
-                        temporary_table_id, 
-                        job_config=job_load_config
+                        .astype(str)
+                        .unique()
+                        .tolist()
                     )
-                    job_load_result = job_load_load.result()
-                    created_table_id = f"{job_load_load.destination.project}.{job_load_load.destination.dataset_id}.{job_load_load.destination.table_id}"
-                    print(f"✅ [INGEST] Successfully created temporary Google Ads campaign metadata table {created_table_id} for batch deletion.")
-                    logging.info(f"✅ [INGEST] Successfully created temporary Google Ads campaign metadata table {created_table_id} for batch deletion.")
+
+                else:
+                    unique_keys_value = (
+                        ingest_df_deduplicated[unique_keys_config]
+                        .dropna()
+                        .astype(str)
+                        .drop_duplicates()
+                        .apply(tuple, axis=1)
+                        .tolist()
+                    )
+
+        # Execute batch deletion
+                try:
+                    print(f"🔍 [INGEST] Creating temporary table contains duplicated Google Ads campaign metadata unique keys {unique_keys_config} for batch deletion...")
+                    logging.info(f"🔍 [INGEST] Creating temporary table contains duplicated Google Ads campaign metadata unique keys {unique_keys_config} for batch deletion...")
+                    temporary_table_id = f"{PROJECT}.{raw_dataset}.temp_table_campaign_metadata_delete_keys_{uuid.uuid4().hex[:8]}"
+                    temporary_df_value = pd.DataFrame(
+                        unique_keys_value,
+                        columns=unique_keys_config
+                    )                    
+                    load_table_config = bigquery.LoadJobConfig(write_disposition="WRITE_TRUNCATE")
+                    load_table_execute = google_bigquery_client.load_table_from_dataframe(
+                        temporary_df_value,
+                        temporary_table_id, 
+                        job_config=load_table_config
+                    )
+                    load_table_result = load_table_execute.result()
+                    load_table_id = f"{load_table_execute.destination.project}.{load_table_execute.destination.dataset_id}.{load_table_execute.destination.table_id}"
+                    load_table_rows = google_bigquery_client.get_table(load_table_id).num_rows
+                    print(f"✅ [INGEST] Successfully created temporary Google Ads campaign metadata table {load_table_id} with {load_table_rows} row(s) for batch deletion.")
+                    logging.info(f"✅ [INGEST] Successfully created temporary Google Ads campaign metadata table {load_table_id} with {load_table_rows} row(s) for batch deletion.")
                 except Exception as e:
                     print(f"❌ [INGEST] Failed to create temporary Google Ads campaign metadata table {temporary_table_id} for batch deletion due to {e}.")
                     logging.error(f"❌ [INGEST] Failed to create temporary Google Ads campaign metadata table {temporary_table_id} for batch deletion due to {e}.")
 
-        # Configuration for table delete query
-                query_delete_condition = " AND ".join([
-                    f"CAST(main.{col} AS STRING) = CAST(temp.{col} AS STRING)"
-                    for col in unique_keys_effective
-                ])
-                query_delete_config = f"""
-                    DELETE FROM `{raw_table_campaign}` AS main
-                    WHERE EXISTS (
-                        SELECT 1 FROM `{temporary_table_id}` AS temp
-                        WHERE {query_delete_condition}
-                    )
-                """
-
-        # Execute batch delete                
                 try:                        
                     print(f"🔍 [INGEST] Deleting existing rows of Google Ads campaign metadata using batch deletion with unique key(s) {unique_keys_defined}...")
                     logging.info(f"🔍 [INGEST] Deleting existing rows of Google Ads campaign metadata using batch deletion with unique key(s) {unique_keys_defined}...")
-                    query_delete_load = google_bigquery_client.query(query_delete_config)
-                    query_delete_result = query_delete_load.result()
+                    query_delete_condition = " AND ".join([
+                        f"CAST(main.{col} AS STRING) = CAST(temp.{col} AS STRING)"
+                        for col in unique_keys_config
+                    ])
+                    query_delete_config = f"""
+                        DELETE FROM `{raw_table_campaign}` AS main
+                        WHERE EXISTS (
+                            SELECT 1 FROM `{temporary_table_id}` AS temp
+                            WHERE {query_delete_condition}
+                        )
+                    """                    
+                    query_delete_execute = google_bigquery_client.query(query_delete_config)
+                    query_delete_result = query_delete_execute.result()
                     ingest_rows_deleted = query_delete_result.num_dml_affected_rows
                     google_bigquery_client.delete_table(
                         temporary_table_id, 
@@ -330,27 +359,30 @@ def ingest_campaign_metadata(ingest_campaign_ids: list) -> pd.DataFrame:
                     print(f"❌ [INGEST] Failed to delete existing rows of Google Ads campaign metadata table {raw_table_campaign} by batch deletion due to {e}.")
                     logging.error(f"❌ [INGEST] Failed to delete existing rows of Google Ads campaign metadata table {raw_table_campaign} by batch deletion due to {e}.")
             ingest_sections_status[ingest_section_name] = "succeed"
+        
         except Exception as e:
             ingest_sections_status[ingest_section_name] = "failed"
             print(f"❌ [INGEST] Failed to delete existing rows or create new table {raw_table_campaign} if it not exist for Google Ads campaign metadata due to {e}.")
-            logging.error(f"❌ [INGEST] Failed to delete existing rows or create new table {raw_table_campaign} if it not exist for Google Ads campaign metadata due to {e}.")
+            logging.error(f"❌ [INGEST] Failed to delete existing rows or create new table {raw_table_campaign} if it not exist for Google Ads campaign metadata due to {e}.")        
+        
         finally:
             ingest_sections_time[ingest_section_name] = round(time.time() - ingest_section_start, 2)
 
     # 1.1.7. Upload Google Ads campaign metadata to Google BigQuery
         ingest_section_name = "[INGEST] Upload Google Ads campaign metadata to Google BigQuery"
         ingest_section_start = time.time()
+        
         try:
             print(f"🔍 [INGEST] Uploading {len(ingest_df_deduplicated)} deduplicated row(s) of Google Ads campaign metadata to Google BigQuery table {raw_table_campaign}...")
             logging.info(f"🔍 [INGEST] Uploading {len(ingest_df_deduplicated)} deduplicated row(s) of Google Ads campaign metadata to Google BigQuery table {raw_table_campaign}...")
-            job_load_config = bigquery.LoadJobConfig(write_disposition="WRITE_APPEND")
-            job_load_load = google_bigquery_client.load_table_from_dataframe(
+            load_table_config = bigquery.LoadJobConfig(write_disposition="WRITE_APPEND")
+            load_table_execute = google_bigquery_client.load_table_from_dataframe(
                 ingest_df_deduplicated, 
                 raw_table_campaign, 
-                job_config=job_load_config
+                job_config=load_table_config
             )
-            job_load_result = job_load_load.result()
-            ingest_rows_uploaded = job_load_load.output_rows
+            load_table_result = load_table_execute.result()
+            ingest_rows_uploaded = load_table_execute.output_rows
             ingest_df_uploaded = ingest_df_deduplicated.copy()
             ingest_sections_status[ingest_section_name] = "succeed"
             print(f"✅ [INGEST] Successfully uploaded {ingest_rows_uploaded} row(s) of Google Ads campaign metadata to Google BigQuery table {raw_table_campaign}.")
@@ -359,6 +391,7 @@ def ingest_campaign_metadata(ingest_campaign_ids: list) -> pd.DataFrame:
             ingest_sections_status[ingest_section_name] = "failed"
             print(f"❌ [INGEST] Failed to upload Google Ads campaign metadata to Google BigQuery table {raw_table_campaign} due to {e}.")
             logging.error(f"❌ [INGEST] Failed to upload Google Ads campaign metadata to Google BigQuery table {raw_table_campaign} due to {e}.")
+        
         finally:
             ingest_sections_time[ingest_section_name] = round(time.time() - ingest_section_start, 2)
 
