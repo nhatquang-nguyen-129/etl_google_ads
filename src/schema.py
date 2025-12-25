@@ -47,16 +47,16 @@ import pandas as pd
 # 1.1. Enforce that the given DataFrame contains all required columns with correct datatypes
 def enforce_table_schema(schema_df_input: pd.DataFrame, schema_type_mapping: str) -> pd.DataFrame:
     
-    # 1.1.1. Start timing the TikTok Ads schema enforcement
+    # 1.1.1. Start timing the Google Ads schema enforcement
     ICT = ZoneInfo("Asia/Ho_Chi_Minh")    
     schema_time_start = time.time()
     schema_sections_status = {}
     schema_sections_time = {}
-    print(f"🔍 [SCHEMA] Proceeding to enforce schema for TikTok Ads with {len(schema_df_input)} given row(s) for mapping type {schema_type_mapping} at {datetime.now(ICT).strftime("%Y-%m-%d %H:%M:%S")}...")
-    logging.info(f"🔍 [SCHEMA] Proceeding to enforce schema for TikTok Ads with {len(schema_df_input)} given row(s) for mapping type {schema_type_mapping} at {datetime.now(ICT).strftime("%Y-%m-%d %H:%M:%S")}...")
+    print(f"🔍 [SCHEMA] Proceeding to enforce schema for Google Ads with {len(schema_df_input)} given row(s) for mapping type {schema_type_mapping} at {datetime.now(ICT).strftime("%Y-%m-%d %H:%M:%S")}...")
+    logging.info(f"🔍 [SCHEMA] Proceeding to enforce schema for Google Ads with {len(schema_df_input)} given row(s) for mapping type {schema_type_mapping} at {datetime.now(ICT).strftime("%Y-%m-%d %H:%M:%S")}...")
 
-    # 1.1.2. Define schema mapping for TikTk Ads data type
-    schema_section_name = "[SCHEMA] Define schema mapping for TikTk Ads data type"
+    # 1.1.2. Define schema mapping for Google Ads data type
+    schema_section_name = "[SCHEMA] Define schema mapping for Google Ads data type"
     schema_section_start = time.time()    
     schema_types_mapping = {
         "fetch_campaign_metadata": {
@@ -311,22 +311,22 @@ def enforce_table_schema(schema_df_input: pd.DataFrame, schema_type_mapping: str
         try:
             if schema_type_mapping not in schema_types_mapping:
                 schema_sections_status[schema_section_name] = "failed"
-                print(f"❌ [SCHEMA] Failed to validate schema type {schema_type_mapping} for TikTok Ads then enforcement is suspended.")
-                logging.error(f"❌ [SCHEMA] Failed to validate schema type {schema_type_mapping} for TikTok Ads then enforcement is suspended.")
+                print(f"❌ [SCHEMA] Failed to validate schema type {schema_type_mapping} for Google Ads then enforcement is suspended.")
+                logging.error(f"❌ [SCHEMA] Failed to validate schema type {schema_type_mapping} for Google Ads then enforcement is suspended.")
             else:
                 schema_columns_expected = schema_types_mapping[schema_type_mapping]
                 schema_sections_status[schema_section_name] = "succeed"
-                print(f"✅ [SCHEMA] Successfully validated schema type {schema_type_mapping} for TikTok Ads.")
-                logging.info(f"✅ [SCHEMA] Successfully validated schema type {schema_type_mapping} for TikTok Ads.")
+                print(f"✅ [SCHEMA] Successfully validated schema type {schema_type_mapping} for Google Ads.")
+                logging.info(f"✅ [SCHEMA] Successfully validated schema type {schema_type_mapping} for Google Ads.")
         finally:
             schema_sections_time[schema_section_name] = round(time.time() - schema_section_start, 2)
 
-    # 1.1.4. Enforce schema columns for TikTok Ads
-        schema_section_name = "[SCHEMA] Enforce schema columns for TikTok Ads"
+    # 1.1.4. Enforce schema columns for Google Ads
+        schema_section_name = "[SCHEMA] Enforce schema columns for Google Ads"
         schema_section_start = time.time()              
         try:
-            print(f"🔄 [SCHEMA] Enforcing schema for TikTok Ads with schema type {schema_type_mapping}...")
-            logging.info(f"🔄 [SCHEMA] Enforcing schema for TikTok Ads with schema type {schema_type_mapping}...")
+            print(f"🔄 [SCHEMA] Enforcing schema for Google Ads with schema type {schema_type_mapping}...")
+            logging.info(f"🔄 [SCHEMA] Enforcing schema for Google Ads with schema type {schema_type_mapping}...")
             schema_df_enforced = schema_df_input.copy()            
             for schema_column_expected, schema_data_type in schema_columns_expected.items():
                 if schema_column_expected not in schema_df_enforced.columns: 
@@ -354,16 +354,16 @@ def enforce_table_schema(schema_df_input: pd.DataFrame, schema_type_mapping: str
                     logging.warning(f"⚠️ [SCHEMA] Failed to coerce column {schema_column_expected} to {schema_data_type} due to {e}.")
             schema_df_enforced = schema_df_enforced[list(schema_columns_expected.keys())]       
             schema_sections_status[schema_section_name] = "succeed"
-            print(f"✅ [SCHEMA] Successfully enforced schema for TikTok Ads with {len(schema_df_enforced)} row(s) and schema type {schema_type_mapping}.")
-            logging.info(f"✅ [SCHEMA] Successfully enforced schema for TikTok Ads with {len(schema_df_enforced)} row(s) and schema type {schema_type_mapping}.")
+            print(f"✅ [SCHEMA] Successfully enforced schema for Google Ads with {len(schema_df_enforced)} row(s) and schema type {schema_type_mapping}.")
+            logging.info(f"✅ [SCHEMA] Successfully enforced schema for Google Ads with {len(schema_df_enforced)} row(s) and schema type {schema_type_mapping}.")
         except Exception as e:
             schema_sections_status[schema_section_name] = "failed"
-            print(f"❌ [SCHEMA] Failed to enforce schema for TikTok Ads with schema type {schema_type_mapping} due to {e}.")
-            logging.error(f"❌ [SCHEMA] Failed to enforce schema for TikTok Ads with schema type {schema_type_mapping} due to {e}.")
+            print(f"❌ [SCHEMA] Failed to enforce schema for Google Ads with schema type {schema_type_mapping} due to {e}.")
+            logging.error(f"❌ [SCHEMA] Failed to enforce schema for Google Ads with schema type {schema_type_mapping} due to {e}.")
         finally:
             schema_sections_time[schema_section_name] = round(time.time() - schema_section_start, 2)       
 
-    # 1.1.5. Summarize schema enforcement results for TikTok Ads
+    # 1.1.5. Summarize schema enforcement results for Google Ads
     finally:
         schema_time_elapsed = round(time.time() - schema_time_start, 2)
         schema_df_final = schema_df_enforced.copy() if "schema_df_enforced" in locals() and not schema_df_enforced.empty else pd.DataFrame()        
@@ -385,16 +385,16 @@ def enforce_table_schema(schema_df_input: pd.DataFrame, schema_type_mapping: str
         }         
         if schema_sections_failed:
             schema_status_final = "schema_failed_all"
-            print(f"❌ [SCHEMA] Failed to complete TikTok Ads schema enforcement with {schema_rows_output}/{schema_rows_input} enforced row(s) due to section(s) {', '.join(schema_sections_failed)} in {schema_time_elapsed}s.")
-            logging.error(f"❌ [SCHEMA] Failed to complete TikTok Ads schema enforcement with {schema_rows_output}/{schema_rows_input} enforced row(s) due to section(s) {', '.join(schema_sections_failed)} in {schema_time_elapsed}s.")
+            print(f"❌ [SCHEMA] Failed to complete Google Ads schema enforcement with {schema_rows_output}/{schema_rows_input} enforced row(s) due to section(s) {', '.join(schema_sections_failed)} in {schema_time_elapsed}s.")
+            logging.error(f"❌ [SCHEMA] Failed to complete Google Ads schema enforcement with {schema_rows_output}/{schema_rows_input} enforced row(s) due to section(s) {', '.join(schema_sections_failed)} in {schema_time_elapsed}s.")
         elif schema_rows_output == schema_rows_input:
             schema_status_final = "schema_succeed_all"
-            print(f"🏆 [SCHEMA] Successfully completed TikTok Ads schema enforcement with {schema_rows_output}/{schema_rows_input} enforced row(s) in {schema_time_elapsed}s.")
-            logging.info(f"🏆 [SCHEMA] Successfully completed TikTok Ads schema enforcement with {schema_rows_output}/{schema_rows_input} enforced row(s) in {schema_time_elapsed}s.")            
+            print(f"🏆 [SCHEMA] Successfully completed Google Ads schema enforcement with {schema_rows_output}/{schema_rows_input} enforced row(s) in {schema_time_elapsed}s.")
+            logging.info(f"🏆 [SCHEMA] Successfully completed Google Ads schema enforcement with {schema_rows_output}/{schema_rows_input} enforced row(s) in {schema_time_elapsed}s.")            
         else:
             schema_status_final = "schema_succeed_partial"
-            print(f"⚠️ [SCHEMA] Partially completed TikTok Ads schema enforcement with {schema_rows_output}/{schema_rows_input} enforced row(s) in {schema_time_elapsed}s.")
-            logging.warning(f"⚠️ [SCHEMA] Partially completed TikTok Ads schema enforcement with {schema_rows_output}/{schema_rows_input} enforced row(s) in {schema_time_elapsed}s.")
+            print(f"⚠️ [SCHEMA] Partially completed Google Ads schema enforcement with {schema_rows_output}/{schema_rows_input} enforced row(s) in {schema_time_elapsed}s.")
+            logging.warning(f"⚠️ [SCHEMA] Partially completed Google Ads schema enforcement with {schema_rows_output}/{schema_rows_input} enforced row(s) in {schema_time_elapsed}s.")
         schema_results_final = {
             "schema_df_final": schema_df_final,
             "schema_status_final": schema_status_final,
