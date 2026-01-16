@@ -1,0 +1,23 @@
+# Python ultities
+python-dateutil
+pytz
+python-dotenv
+requests
+tenacity
+
+# Python libraries
+pandas
+pyarrow
+
+# Google Ads
+google-ads
+
+# Google Cloud
+google-auth
+google-auth-oauthlib
+google-cloud-bigquery
+google-cloud-bigquery-storage
+google-cloud-storage
+
+# Serialization / utils
+orjson
