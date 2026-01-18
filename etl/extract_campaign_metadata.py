@@ -22,38 +22,26 @@ def extract_campaign_metadata(
     campaign_id_list: List[str]
 ) -> List[dict]:
     """
-    Extract Campaign Metadata from Google Ads
-    ----------------------------------------
-    Purpose:
-        Retrieve campaign-level metadata (non-metric attributes)
-        for enrichment and dimensional modeling.
-
+    Extract campaign metadata from Google Ads
+    ---------
     Workflow:
         1. Initialize Google Ads client using provided credentials
         2. Execute GAQL query filtered by campaign_id list
         3. Normalize API response into Python dictionaries
         4. Return campaign metadata records
-
-    ----------------------------------------
-    Grain:
-        - Campaign
-        - Customer (Google Ads account)
-
-    ----------------------------------------
-    Key Fields:
-        - campaign.id
-        - campaign.name
-        - campaign.status
-        - campaign.advertising_channel_type
-        - campaign.advertising_channel_sub_type
-        - campaign.serving_status
-        - campaign.start_date
-        - campaign.end_date
-
-    ----------------------------------------
+    ---------
+    Parameters:
+        1. campaign.id
+        2. campaign.name
+        3. campaign.status
+        4. campaign.advertising_channel_type
+        5. campaign.advertising_channel_sub_type
+        6. campaign.serving_status
+        7. campaign.start_date
+        8. campaign.end_date
+    ---------
     Returns:
-        List[dict]
-            Flattened campaign metadata records
+        1. List[dict]: Flattened campaign metadata records
     """
 
     if not campaign_id_list:
@@ -73,13 +61,13 @@ def extract_campaign_metadata(
         WHERE campaign.id IN ({",".join(map(str, campaign_id_list))})
     """
 
-    # 1. Init Google Ads client
+    # 1. Initialize
     client = GoogleAdsClient.load_from_dict({
         **google_ads_credentials,
         "use_proto_plus": True
     })
 
-    # 2. Execute query
+    # 2. Make API call
     google_ads_service = client.get_service("GoogleAdsService")
 
     rows: List[dict] = []
@@ -104,8 +92,11 @@ def extract_campaign_metadata(
             })
 
     except GoogleAdsException as e:
-        raise RuntimeError(
-            f"❌ [EXTRACT] Google Ads campaign metadata failed: {e}"
+        msg = (
+            f"❌ [EXTRACT] Failed to extract Google Ads campaign metadata for "
+            f"{len(campaign_id_list)} campaign_id(s) due to "
+            f"{e}."
         )
+        raise RuntimeError(msg)
 
     return rows
