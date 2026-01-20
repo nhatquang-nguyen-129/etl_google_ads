@@ -1,19 +1,14 @@
-import os
-import sys
 import logging
+from pathlib import Path
+import sys
 from typing import (
     List, 
     Dict
 )
 from google.ads.googleads.client import GoogleAdsClient
 from google.ads.googleads.errors import GoogleAdsException
-sys.path.append(
-    os.path.abspath(
-        os.path.join(
-            os.path.dirname(__file__), "../../"
-        )
-    )
-)
+ROOT_FOLDER_LOCATION = Path(__file__).resolve().parents[2]
+sys.path.append(str(ROOT_FOLDER_LOCATION))
 
 def extract_campaign_insights(
     *,
@@ -61,15 +56,24 @@ def extract_campaign_insights(
         WHERE segments.date BETWEEN @start_date AND @end_date
     """
 
-    # 1. Init Google Ads client
-    client = GoogleAdsClient.load_from_dict({
+    msg = (
+        "🔍 [EXTRACT] Extracting Google Ads campaign insights for customer_id "
+        f"{customer_id} from start_date "
+        f"{start_date} to end_date "
+        f"{end_date}..."
+    )
+    print(msg)
+    logging.info(msg)
+
+    # 1. Initialized Google Ads client
+    google_ads_client = GoogleAdsClient.load_from_dict({
         **google_ads_credentials,
         "use_proto_plus": True
     })
 
     # 2. Prepare request
-    google_ads_service = client.get_service("GoogleAdsService")
-    request = client.get_type("SearchGoogleAdsStreamRequest")
+    google_ads_service = google_ads_client.get_service("GoogleAdsService")
+    request = google_ads_client.get_type("SearchGoogleAdsStreamRequest")
 
     request.customer_id = customer_id
     request.query = _CAMPAIGN_INSIGHTS_QUERY
@@ -83,6 +87,7 @@ def extract_campaign_insights(
         stream = google_ads_service.search_stream(request=request)
 
         for batch in stream:
+            batch_count += 1
             for row in batch.results:
                 rows.append({
                     "date": row.segments.date,
@@ -97,10 +102,19 @@ def extract_campaign_insights(
                     "conversions": row.metrics.conversions,
                     "conversion_value": row.metrics.conversions_value,
                 })
+        
+        msg = (
+            "✅ [EXTRACT] Successfully extracted "
+            f"{len(rows)} row(s) of Google Ads campaign insights with "
+            f"{batch_count} batch(es)."
+        )
+        print(msg)                
+        logging.info(msg)
 
     except GoogleAdsException as e:
         raise RuntimeError(
-            f"❌ [EXTRACT] Google Ads campaign insights failed: {e}"
+            "❌ [EXTRACT] Failed to extract Google Ads campaign insights due to "
+            f"{e}."
         )
 
     return rows
