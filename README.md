@@ -1,5 +1,5 @@
-<p align="center">
-  <img src="kidsplaza.png" alt="KidsPlaza Logo" width="200"/>
+<p align="left">
+  <img src="kidsplaza.png" alt="KidsPlaza Logo" width="500"/>
 </p>
 
 This pipeline integrates **Google Ads Insights data**, supporting both **daily synchronization** and **historical backfills**, and serves as the foundation for performance analysis, budget reconciliation, and marketing reporting.
