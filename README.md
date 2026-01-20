@@ -1,6 +1,4 @@
-# GOOGLE ADS PIPELINE
-
-KidsPlaza Google Ads Pipeline powers the **Digital Advertising Data Analysis** process at KidsPlaza by automating the ingestion, standardization, and loading of Google Ads data into the centralized analytics warehouse (**Google BigQuery**).
+![KidsPlaza Logo](https://cdn.kidsplaza.vn/_next/image?url=https%3A%2F%2Fstatic.kidsplaza.vn%2Fassets%2Fimages%2FLogo_KPZ.png&w=1920&q=100&fm=webp)
 
 This pipeline integrates **Google Ads Insights data**, supporting both **daily synchronization** and **historical backfills**, and serves as the foundation for performance analysis, budget reconciliation, and marketing reporting.
 
