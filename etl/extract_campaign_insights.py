@@ -82,7 +82,7 @@ def extract_campaign_insights(
 
     rows: List[dict] = []
 
-    # 3. Execute GAQL
+    # 3. Fetch
     try:
         stream = google_ads_service.search_stream(request=request)
 
