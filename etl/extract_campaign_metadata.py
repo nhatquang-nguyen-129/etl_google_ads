@@ -56,6 +56,14 @@ def extract_campaign_metadata(
         WHERE campaign.id IN ({",".join(map(str, campaign_id_list))})
     """
 
+    msg = (
+        "🔍 [EXTRACT] Extracting Google Ads campaign metadata for customer_id "
+        f"{customer_id} with "
+        f"{len(campaign_id_list)} campaign_id(s)... "
+    )
+    print(msg)
+    logging.info(msg)
+
     # 1. Initialize
     google_ads_client = GoogleAdsClient.load_from_dict({
         **google_ads_credentials,
@@ -67,6 +75,7 @@ def extract_campaign_metadata(
 
     rows: List[dict] = []
 
+    # 3. Fetch
     try:
         response = google_ads_service.search(
             customer_id=customer_id,
@@ -85,6 +94,13 @@ def extract_campaign_metadata(
                 "start_date": row.campaign.start_date,
                 "end_date": row.campaign.end_date,
             })
+
+        msg = (
+            "✅ [EXTRACT] Successfully extracted "
+            f"{len(rows)} row(s) of Google Ads campaign metadata."
+        )
+        print(msg)                
+        logging.info(msg)
 
     except GoogleAdsException as e:
         msg = (
