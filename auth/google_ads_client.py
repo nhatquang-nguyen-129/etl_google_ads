@@ -2,7 +2,7 @@ from google.ads.googleads.client import GoogleAdsClient
 from auth.google_ads.secret_manager import GCPSecretManager
 
 
-class GoogleAdsClientFactory:
+class internalGoogleAdsClient:
 
     def __init__(
         self,

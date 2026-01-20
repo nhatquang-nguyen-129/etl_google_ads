@@ -1,38 +1,66 @@
 from google_auth_oauthlib.flow import InstalledAppFlow
-from google.cloud import secretmanager
 import json
-import logging
+from pathlib import Path
+import sys
+ROOT_FOLDER_LOCATION = Path(__file__).resolve().parents[1]
+sys.path.append(str(ROOT_FOLDER_LOCATION))
 
+# Default Google Ads scopes
 SCOPES = ["https://www.googleapis.com/auth/adwords"]
 
-def bootstrap_oauth(
-    project_id: str,
-    secret_id: str,
-    client_secret_file: str
-):
+# Put your OAuth client secret desktop app location here
+GCP_OAUTH2_CLIENT_SECRET_FILE = Path(__file__).resolve().parent / "oauth2_desktop_client.json"
+
+# Put your Google Ads MCC Developer Token here
+GOOGLE_ADS_MCC_DEVELOPER_TOKEN = "PUT_YOUR_GOOGLE_ADS_MCC_DEVELOPER_TOKEN_HERE"
+
+# Put your Google Ads MCC numbers only no dashes customer ID here
+GOOGLE_ADS_MCC_CUSTOMER_ID = "PUT_YOUR_GOOGLE_ADS_MCC_CUSTOMER_ID_HERE"
+
+def internal_bootstrap_oauth():
     flow = InstalledAppFlow.from_client_secrets_file(
-        client_secret_file,
+        GCP_OAUTH2_CLIENT_SECRET_FILE,
         scopes=SCOPES
     )
 
-    credentials = flow.run_local_server(port=8080)
+    credentials = flow.run_local_server(
+        port=0,
+        prompt="consent",
+        access_type="offline"
+    )
 
     payload = {
-        "developer_token": input("Developer Token: "),
+        "developer_token": GOOGLE_ADS_MCC_DEVELOPER_TOKEN,
         "client_id": credentials.client_id,
         "client_secret": credentials.client_secret,
         "refresh_token": credentials.refresh_token,
-        "login_customer_id": input("Login Customer ID (MCC): ")
+        "login_customer_id": GOOGLE_ADS_MCC_CUSTOMER_ID,
     }
 
-    client = secretmanager.SecretManagerServiceClient()
-    parent = f"projects/{project_id}/secrets/{secret_id}"
+    print("\n" + "=" * 64)
+    print(" Google Ads OAuth Bootstrap")
+    print("=" * 64)
 
-    client.add_secret_version(
-        parent=parent,
-        payload={"data": json.dumps(payload).encode("utf-8")}
-    )
+    print("\nSuccessfully generated credential payload:\n")
+    print(json.dumps(payload, indent=2))
 
-    msg = ("✅ [AUTH] Google Ads OAuth credentials saved to Secret Manager.") 
-    print(msg)
-    logging.info(msg)
+    print("\n" + "-" * 64)
+    print("SECURITY WARNING")
+    print("- This output contains sensitive credentials")
+    print("- Run this script only on a trusted local machine")
+    print("- Do NOT commit this payload to source control")
+    print("- Do NOT share this payload over chat or email")
+
+    print("\nNEXT STEPS")
+    print("1. Copy the credential payload above")
+    print("2. Store it securely with Secret Manager/Vault/Encrypted file")
+    print("3. Use it to initialize GoogleAdsClient in production")
+    print("4. This OAuth bootstrap only needs to be run only ONCE")
+
+    print("\n" + "=" * 64 + "\n")
+
+    return payload
+
+
+if __name__ == "__main__":
+    internal_bootstrap_oauth()
