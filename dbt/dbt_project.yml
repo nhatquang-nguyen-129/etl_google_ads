@@ -1,0 +1,19 @@
+name: ads_warehouse
+version: "1.0"
+config-version: 2
+
+profile: ads_warehouse
+
+model-paths: ["models"]
+analysis-paths: ["analysis"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+target-path: "target"
+log-path: "logs"
+
+models:
+  ads_warehouse:
+    +materialized: view

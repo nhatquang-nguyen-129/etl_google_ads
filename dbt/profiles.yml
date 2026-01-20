@@ -1,0 +1,10 @@
+pipeline_facebook_ads:
+  target: dev
+  outputs:
+    dev:
+      type: bigquery
+      method: oauth          # Switch to ADC auth from service-account.json
+      project: seer-retail-sales
+      dataset: kids_dataset_sales_api_mart
+      location: asia-southeast1
+      threads: 4
