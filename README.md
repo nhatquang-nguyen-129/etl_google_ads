@@ -1,4 +1,6 @@
-![KidsPlaza Logo](https://cdn.kidsplaza.vn/_next/image?url=https%3A%2F%2Fstatic.kidsplaza.vn%2Fassets%2Fimages%2FLogo_KPZ.png&w=1920&q=100&fm=webp)
+<p align="center">
+  <img src="kidsplaza.png" alt="KidsPlaza Logo" width="200"/>
+</p>
 
 This pipeline integrates **Google Ads Insights data**, supporting both **daily synchronization** and **historical backfills**, and serves as the foundation for performance analysis, budget reconciliation, and marketing reporting.
 
