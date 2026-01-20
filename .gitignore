@@ -12,3 +12,6 @@ __pycache__/
 env/
 venv/
 ENV/
+
+# Google Ads OAuth desktop client secret
+auth/oauth2_desktop_client.json
