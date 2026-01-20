@@ -71,7 +71,7 @@ def extract_campaign_insights(
         "use_proto_plus": True
     })
 
-    # 2. Prepare request
+    # 2. Make API call
     google_ads_service = google_ads_client.get_service("GoogleAdsService")
     request = google_ads_client.get_type("SearchGoogleAdsStreamRequest")
 

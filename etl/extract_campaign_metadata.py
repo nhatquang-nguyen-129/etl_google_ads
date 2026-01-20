@@ -1,19 +1,14 @@
-import os
-import sys
 import logging
+from pathlib import Path
+import sys
 from typing import (
     List, 
     Dict
 )
 from google.ads.googleads.client import GoogleAdsClient
 from google.ads.googleads.errors import GoogleAdsException
-sys.path.append(
-    os.path.abspath(
-        os.path.join(
-            os.path.dirname(__file__), "../../"
-        )
-    )
-)
+ROOT_FOLDER_LOCATION = Path(__file__).resolve().parents[2]
+sys.path.append(str(ROOT_FOLDER_LOCATION))
 
 def extract_campaign_metadata(
     *,
@@ -62,13 +57,13 @@ def extract_campaign_metadata(
     """
 
     # 1. Initialize
-    client = GoogleAdsClient.load_from_dict({
+    google_ads_client = GoogleAdsClient.load_from_dict({
         **google_ads_credentials,
         "use_proto_plus": True
     })
 
     # 2. Make API call
-    google_ads_service = client.get_service("GoogleAdsService")
+    google_ads_service = google_ads_client.get_service("GoogleAdsService")
 
     rows: List[dict] = []
 
