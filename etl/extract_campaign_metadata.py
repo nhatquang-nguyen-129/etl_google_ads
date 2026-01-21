@@ -12,7 +12,7 @@ sys.path.append(str(ROOT_FOLDER_LOCATION))
 
 def extract_campaign_metadata(
     *,
-    google_ads_credentials: Dict,
+    google_ads_client,
     customer_id: str,
     campaign_id_list: List[str]
 ) -> List[dict]:
@@ -64,18 +64,10 @@ def extract_campaign_metadata(
     print(msg)
     logging.info(msg)
 
-    # 1. Initialize
-    google_ads_client = GoogleAdsClient.load_from_dict({
-        **google_ads_credentials,
-        "use_proto_plus": True
-    })
-
-    # 2. Make API call
     google_ads_service = google_ads_client.get_service("GoogleAdsService")
 
     rows: List[dict] = []
 
-    # 3. Fetch
     try:
         response = google_ads_service.search(
             customer_id=customer_id,
