@@ -11,6 +11,7 @@ from zoneinfo import ZoneInfo
 
 from google.ads.googleads.client import GoogleAdsClient
 from google.cloud import secretmanager
+from google.api_core.client_options import ClientOptions
 
 from dags.dags_google_ads import dags_google_ads
 
@@ -80,13 +81,17 @@ def main():
     print(msg)
     logging.info(msg)
 
-# Resolve input from Google Secret Manager
+# Initialize Google Secret Manager
     try:
         msg = ("🔍 [MAIN] Initialize Google Secret Manager client...")
         print(msg)
         logging.info(msg)
         
-        google_secret_client = secretmanager.SecretManagerServiceClient()
+        google_secret_client = secretmanager.SecretManagerServiceClient(
+            client_options=ClientOptions(
+                api_endpoint="secretmanager.googleapis.com"
+            )
+        )
 
         msg = ("✅ [MAIN] Successfully initialized Google Secret Manager client.")
         print(msg)
@@ -98,42 +103,77 @@ def main():
             f"{e}."
         )
         
-    secret_customer_id = (
-        f"{COMPANY}_secret_{DEPARTMENT}_google_account_id_{ACCOUNT}"
-    )
-    secret_customer_name = (
-        f"projects/{PROJECT}/secrets/{secret_customer_id}/versions/latest"
-    )
-    secret_customer_response = google_secret_client.access_secret_version(
-        name=secret_customer_name
-    )
-    google_customer_id = (
-        json.loads(secret_customer_response.payload.data.decode("UTF-8"))["customer_id"]
-        .replace("-", "")
-        .strip()
-    )
-    msg = (
-        "✅ [MAIN] Successfully retrieved Google Ads customer_id "
-        f"{google_customer_id} from Google Secret Manager."
-    )
-    print(msg)
-    logging.info(msg)
+# Resolve customer_id from Google Secret Manager
+    try:
+        secret_customer_id = (
+            f"{COMPANY}_secret_{DEPARTMENT}_google_account_id_{ACCOUNT}"
+        )
+        secret_customer_name = (
+            f"projects/{PROJECT}/secrets/{secret_customer_id}/versions/latest"
+        )
+        
+        msg = (
+            "🔍 [MAIN] Retrieving Google Ads secret_customer_id "
+            f"{secret_customer_id} from Google Secret Manager..."
+        )
+        print(msg)
+        logging.info(msg)        
 
-    secret_credentials_json = (
-        f"{COMPANY}_secret_all_google_token_access_user"
-    )
-    secret_credentials_name = (
-        f"projects/{PROJECT}/secrets/{secret_credentials_json}/versions/latest"
-    )
-    secret_credentials_response = google_secret_client.access_secret_version(
-        name=secret_credentials_name
-    )
-    google_ads_credentials = json.loads(
-        secret_credentials_response.payload.data.decode("UTF-8")
-    )
-    msg = ("✅ [MAIN] Successfully retrieved Google Ads credentials from Google Secret Manager.")
-    print(msg)
-    logging.info(msg)
+        secret_customer_response = google_secret_client.access_secret_version(
+            name=secret_customer_name,
+            timeout=10.0, #DEBUG
+        )
+        google_customer_id = (
+            secret_customer_response.payload.data.decode("utf-8")
+            .replace("-", "")
+            .replace(" ", "")
+            .strip()
+        )
+        
+        msg = (
+            "✅ [MAIN] Successfully retrieved Google Ads customer_id "
+            f"{google_customer_id} from Google Secret Manager."
+        )
+        print(msg)
+        logging.info(msg)
+    
+    except Exception as e:
+        raise RuntimeError(
+            "❌ [MAIN] Failed to retrieve Google Ads customer_id from Google Secret Manager due to "
+            f"{e}."
+        )
+
+    try:
+        secret_credentials_json = (
+            f"{COMPANY}_secret_all_google_token_access_user"
+        )
+        secret_credentials_name = (
+            f"projects/{PROJECT}/secrets/{secret_credentials_json}/versions/latest"
+        )
+        
+        msg = (
+            "🔍 [MAIN] Retrieving Google Ads secret_credentials_json "
+            f"{secret_credentials_json} from Google Secret Manager..."
+        )
+        print(msg)
+        logging.info(msg)
+
+        secret_credentials_response = google_secret_client.access_secret_version(
+            name=secret_credentials_name
+        )
+        google_ads_credentials = json.loads(
+            secret_credentials_response.payload.data.decode("UTF-8")
+        )
+        
+        msg = ("✅ [MAIN] Successfully retrieved Google Ads credentials from Google Secret Manager.")
+        print(msg)
+        logging.info(msg)
+    
+    except Exception as e:
+        raise RuntimeError(
+            "❌ [MAIN] Failed to retrieve Google Ads credentials from Google Secret Manager due to "
+            f"{e}."
+        )        
 
 # Initialize global Google Ads client
     google_ads_config = {

@@ -49,7 +49,7 @@ def dags_google_ads(
         dags_split_date = dags_start_date.strftime("%Y-%m-%d")
 
         msg = (
-            "🔁 [DAG] Trigger to extract Google Ads campaign insights from customer_id "
+            "🔁 [DAGS] Trigger to extract Google Ads campaign insights from customer_id "
             f"{customer_id} for "
             f"{dags_split_date}..."
         )

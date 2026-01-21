@@ -1,69 +1,116 @@
-import sys
+import logging
 from pathlib import Path
+import sys
+from typing import List
+
+from google.ads.googleads.client import GoogleAdsClient
+from google.ads.googleads.errors import GoogleAdsException
 ROOT_FOLDER_LOCATION = Path(__file__).resolve().parents[2]
 sys.path.append(str(ROOT_FOLDER_LOCATION))
 
-import logging
-import pandas as pd
-from pathlib import Path
-from typing import (
-    Union, 
-    List, 
-    Dict
-)
 
-def transform_campaign_metadata(
-    input_campaign_metadatas: Union[pd.DataFrame, List[Dict]]
-) -> pd.DataFrame:
+def extract_campaign_metadata(
+    google_ads_client,
+    customer_id: str,
+    campaign_id_list: list[str],
+) -> list[dict]:
+    """
+    Extract Google Ads campaign metadata (no metrics).
 
+    This function is responsible for:
+        - Fetching static & semi-static campaign attributes
+        - Returning normalized campaign metadata for downstream joins
+        - NOT performing aggregation or transformation
 
-    if isinstance(input_campaign_metadatas, list):
-        input_campaign_metadatas = pd.DataFrame(input_campaign_metadatas)
+    Expected to be called AFTER campaign insights extraction.
+    """
 
-    msg = (
-        "🔄 [TRANSFORM] Transforming "
-        f"{len(input_campaign_metadatas)} row(s) of Google Ads campaign metadata..."
+    if not campaign_id_list:
+        return []
+
+    ga_service = google_ads_client.get_service("GoogleAdsService")
+
+    # Convert list to comma-separated string for GAQL
+    campaign_ids_str = ", ".join([f"'{cid}'" for cid in campaign_id_list])
+
+    query = f"""
+        SELECT
+            campaign.id,
+            campaign.name,
+            campaign.status,
+            campaign.advertising_channel_type,
+            campaign.advertising_channel_sub_type,
+
+            campaign.start_date,
+            campaign.end_date,
+
+            campaign.bidding_strategy_type,
+            campaign.manual_cpc.enhanced_cpc_enabled,
+
+            campaign.target_cpa.target_cpa_micros,
+            campaign.target_roas.target_roas,
+
+            campaign.serving_status,
+            campaign.experiment_type,
+
+            campaign.tracking_url_template,
+            campaign.final_url_suffix,
+
+            customer.id
+        FROM campaign
+        WHERE campaign.id IN ({campaign_ids_str})
+    """
+
+    response = ga_service.search(
+        customer_id=customer_id,
+        query=query,
     )
-    print(msg)
-    logging.info(msg)
 
-    if input_campaign_metadatas.empty:
-        msg = "⚠️ [TRANSFORM] Empty input campaign metadata then transformation will be skipped."
-        print(msg)
-        logging.warning(msg)
-        return input_campaign_metadatas
+    campaign_metadatas: list[dict] = []
 
-    required_cols = {"campaign_name", "start_date"}
-    missing = required_cols - set(input_campaign_metadatas.columns)
-    if missing:
-        msg = f"⚠️ [TRANSFORM] Missing columns {missing} then transformation will be skipped."
-        print(msg)
-        logging.warning(msg)
-        return input_campaign_metadatas
+    for row in response:
+        campaign = row.campaign
 
-    df = input_campaign_metadatas.copy()
-    df["platform"] = "Google"
+        campaign_metadatas.append({
+            # Identifiers
+            "customer_id": str(row.customer.id),
+            "campaign_id": str(campaign.id),
+            "campaign_name": campaign.name,
 
-    df = df.assign(
-        objective=lambda df: df["campaign_name"].fillna("").str.split("_").str[0].fillna("unknown"),
-        budget_group=lambda df: df["campaign_name"].fillna("").str.split("_").str[1].fillna("unknown"),
-        region=lambda df: df["campaign_name"].fillna("").str.split("_").str[2].fillna("unknown"),
-        category_level_1=lambda df: df["campaign_name"].fillna("").str.split("_").str[3].fillna("unknown"),
+            # Status
+            "campaign_status": campaign.status.name,
+            "serving_status": campaign.serving_status.name,
+            "experiment_type": campaign.experiment_type.name,
 
-        track_group=lambda df: df["campaign_name"].fillna("").str.split("_").str[6].fillna("unknown"),
-        pillar_group=lambda df: df["campaign_name"].fillna("").str.split("_").str[7].fillna("unknown"),
-        content_group=lambda df: df["campaign_name"].fillna("").str.split("_").str[8].fillna("unknown"),
+            # Channel
+            "channel_type": campaign.advertising_channel_type.name,
+            "channel_sub_type": campaign.advertising_channel_sub_type.name,
 
-        date=lambda df: pd.to_datetime(df["start_date"], errors="coerce", utc=True).dt.floor("D"),
-        year=lambda df: pd.to_datetime(df["start_date"], errors="coerce", utc=True).dt.strftime("%Y"),
-        month=lambda df: pd.to_datetime(df["start_date"], errors="coerce", utc=True).dt.strftime("%Y-%m"),
-    ).drop(columns=["start_date", "end_date"], errors="ignore")
+            # Dates
+            "start_date": campaign.start_date,
+            "end_date": campaign.end_date,
 
-    msg = (
-        "✅ [TRANSFORM] Successfully transformed "
-        f"{len(df)} row(s) of Google Ads campaign metadata."
-    )
-    print(msg)
-    logging.info(msg)
+            # Bidding
+            "bidding_strategy_type": campaign.bidding_strategy_type.name,
+            "enhanced_cpc_enabled": (
+                campaign.manual_cpc.enhanced_cpc_enabled
+                if campaign.bidding_strategy_type.name == "MANUAL_CPC"
+                else None
+            ),
+            "target_cpa": (
+                campaign.target_cpa.target_cpa_micros / 1_000_000
+                if campaign.target_cpa.target_cpa_micros
+                else None
+            ),
+            "target_roas": (
+                campaign.target_roas.target_roas
+                if campaign.target_roas.target_roas
+                else None
+            ),
 
-    return df
+            # Tracking
+            "tracking_url_template": campaign.tracking_url_template,
+            "final_url_suffix": campaign.final_url_suffix,
+        })
+
+    return campaign_metadatas
