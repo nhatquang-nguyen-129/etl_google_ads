@@ -1,5 +1,6 @@
-from pathlib import Path
+import os
 import sys
+from pathlib import Path
 ROOT_FOLDER_LOCATION = Path(__file__).resolve().parents[2]
 sys.path.append(str(ROOT_FOLDER_LOCATION))
 from datetime import datetime, timedelta
@@ -9,8 +10,13 @@ import time
 from etl.extract_campaign_insights import extract_campaign_insights
 from etl.extract_campaign_metadata import extract_campaign_metadata
 from etl.transform_campaign_metadata import transform_campaign_metadata
-from etl.load.bigquery import load_campaign_daily
-from auth.secret_loader import load_google_ads_secret
+from etl.load_campaign_insights import load_campaign_insights
+
+COMPANY = os.getenv("COMPANY")
+PROJECT = os.getenv("PROJECT")
+DEPARTMENT = os.getenv("DEPARTMENT")
+ACCOUNT = os.getenv("ACCOUNT")
+MODE = os.getenv("MODE")
 
 def dags_google_ads(
     *,
@@ -29,16 +35,12 @@ def dags_google_ads(
     print(msg)
     logging.info(msg)
 
-    # ------------------------------------------------------------------
-    # 1. Parse input dates (already normalized in MAIN)
-    # ------------------------------------------------------------------
-    dags_start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
-    dags_end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
-
-    all_campaign_ids: set[str] = set()
-
+    # Trigger Google Ads campaign insights DAG execution
     DAGS_MAX_ATTEMPTS = 3
     DAGS_MIN_COOLDOWN = 60
+    dags_start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
+    dags_end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
+    total_campaign_ids: set[str] = set()
 
     while dags_start_date <= dags_end_date:
         dags_split_date = dags_start_date.strftime("%Y-%m-%d")
@@ -62,55 +64,69 @@ def dags_google_ads(
 
                 if not insights:
                     msg = (
-                        f"[DAG] {ingest_date} | no insights returned"
+                        "⚠️ [DAG] No Google Ads campaign insights returned from customer_id "
+                        f"{customer_id} then DAG execution "
+                        f"{dags_split_date} will be skipped."
                     )
-                    logging.warning(
-                        f"[DAG] {ingest_date} | no insights returned"
-                    )
+                    print(msg)
+                    logging.warning(msg)
                     break
 
                 daily_campaign_ids = {
                     row["campaign_id"] for row in insights
                 }
-                all_campaign_ids.update(daily_campaign_ids)
+                total_campaign_ids.update(daily_campaign_ids)
 
-                load_campaign_daily(insights)
+                load_campaign_insights(insights)
 
-                logging.info(
-                    f"[DAG] {ingest_date} | "
-                    f"loaded {len(insights)} row(s) | "
-                    f"{len(daily_campaign_ids)} campaign(s)"
-                )
                 break
 
             except Exception as e:
+                retryable = getattr(e, "retryable", False)
                 msg = (
-                    f"⚠️ [DAGS] Failed to extract Google Ads campaign insights for {ingest_date} in "
+                    f"⚠️ [DAGS] Failed to extract Google Ads campaign insights for {dags_split_date} in "
                     f"{attempt}/{DAGS_MAX_ATTEMPTS} attempt(s) due to "
                     f"{e}."
                 )
                 print(msg)
                 logging.warning(msg)
+
+                if not retryable:
+                    raise RuntimeError(
+                        f"❌ [DAGS] Failed to extract Google Ads campaign insights for "
+                        f"{dags_split_date} due to unexpected error then DAG execution will be aborting."
+                    ) from e
+
                 if attempt == DAGS_MAX_ATTEMPTS:
                     raise RuntimeError(
-                    f"❌ [DAGS] Failed to extract Google Ads campaign insights for {ingest_date} in "
-                    f"{attempt}/{DAGS_MAX_ATTEMPTS} attempt(s) due to exceeded attempt limit."
-                )
+                        "❌ [DAGS] Failed to extract Google Ads campaign insights for "
+                        f"{dags_split_date} in "
+                        f"{attempt}/{DAGS_MAX_ATTEMPTS} attempt(s) due to exceeded attempt limit then DAG execution will be aborting."
+                    ) from e
+
                 time.sleep(2 ** attempt)
 
         time.sleep(DAGS_MIN_COOLDOWN)
         date_cursor += timedelta(days=1)
 
-    # ------------------------------------------------------------------
-    # 3. Extract campaign metadata (once)
-    # ------------------------------------------------------------------
-    if not all_campaign_ids:
-        logging.warning("[DAG] No campaign_ids collected → skip metadata")
+    # Trigger Google Ads campaign metadata DAG execution
+    if not total_campaign_ids:
+        msg = (
+            "⚠️ [DAGS] No Google Ads campaign_id appended for customer_id "
+            f"{customer_id} from "
+            f"{start_date} to "
+            f"{end_date} then DAG execution will be suspended."
+        )
+        print(msg)
+        logging.warning(msg)
         return
 
-    logging.info(
-        f"[DAG] Extracting metadata for {len(all_campaign_ids)} campaign(s)"
+    msg = (
+        "🔁 [DAGS] Trigger to extracting Google Ads campaign metadata for "
+        f"{len(total_campaign_ids)} campaign_id(s)..."
     )
+    print(msg)
+    logging.info(msg)
 
     metadata = extract_campaign_metadata(
         google_ads_client=google_ads_client,
@@ -119,7 +135,7 @@ def dags_google_ads(
     )
 
     final_rows = transform_campaign_metadata(
-        insights=None,  # already loaded
+        insights=None,
         metadata=metadata,
     )
 

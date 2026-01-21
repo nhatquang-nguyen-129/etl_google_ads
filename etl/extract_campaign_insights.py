@@ -111,6 +111,7 @@ def extract_campaign_insights(
                 or error_code.timeout_error
             ):
                 
+                retryable = True
                 raise RuntimeError(
                     "❌ [EXTRACT] Failed to extract Google Ads campaign insights for customer_id " 
                     f"{customer_id} from "
@@ -118,6 +119,7 @@ def extract_campaign_insights(
                     f"{end_date} due to API error."
                 ) from e
 
+        retryable = False
         raise ValueError(
             "❌ [EXTRACT] Failed to extract Google Ads campaign insights for customer_id" 
             f"{customer_id} from "
