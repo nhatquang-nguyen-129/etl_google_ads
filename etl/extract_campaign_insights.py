@@ -102,9 +102,26 @@ def extract_campaign_insights(
         logging.info(msg)
 
     except GoogleAdsException as e:
-        raise RuntimeError(
-            "❌ [EXTRACT] Failed to extract Google Ads campaign insights due to "
-            f"{e}."
-        )
+        for error in e.failure.errors:
+            error_code = error.error_code
+            if (
+                error_code.internal_error
+                or error_code.resource_exhausted
+                or error_code.server_error
+                or error_code.timeout_error
+            ):
+                
+                raise RuntimeError(
+                    "❌ [EXTRACT] Failed to extract Google Ads campaign insights for customer_id " 
+                    f"{customer_id} from "
+                    f"{start_date} to "
+                    f"{end_date} due to API error."
+                ) from e
 
-    return rows
+        raise ValueError(
+            "❌ [EXTRACT] Failed to extract Google Ads campaign insights for customer_id" 
+            f"{customer_id} from "
+            f"{start_date} to "  
+            f"{end_date} due to "
+            f"{e}."
+        ) from e
