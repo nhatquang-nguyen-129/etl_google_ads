@@ -6,12 +6,13 @@ sys.path.append(str(ROOT_FOLDER_LOCATION))
 
 from datetime import datetime, timedelta
 import json
-import importlib
 import logging
 from zoneinfo import ZoneInfo
 
 from google.ads.googleads.client import GoogleAdsClient
 from google.cloud import secretmanager
+
+from dags.dags_google_ads import dags_google_ads
 
 COMPANY = os.getenv("COMPANY")
 PROJECT = os.getenv("PROJECT")
@@ -27,11 +28,6 @@ if not all([
     MODE
 ]):
     raise EnvironmentError("❌ [MAIN] Failed to execute Google Ads main entrypoint due to missing required environment variables.")
-
-try:
-    dag_google_ads = importlib.import_module("dags.dag_google_ads")
-except ModuleNotFoundError:
-    raise ImportError("❌ [MAIN] Failed to execute Google Ads main entrypoint due todags.dag_google_ads cannot be imported.")
 
 def main():
     """
@@ -73,11 +69,35 @@ def main():
         end_date = last_month_end.strftime("%Y-%m-%d")
 
     else:
-        raise ValueError(f"⚠️ [MAIN] Unsupported MODE='{MODE}'")
+        raise ValueError(f"⚠️ [MAIN] Failed  Unsupported MODE='{MODE}'")
+    
+    msg = (
+        "✅ [MAIN] Successfully resolved "
+        f"{MODE} mode to date range from "
+        f"{start_date} to "
+        f"{end_date}."
+    )
+    print(msg)
+    logging.info(msg)
 
 # Resolve input from Google Secret Manager
-    google_secret_client = secretmanager.SecretManagerServiceClient()
+    try:
+        msg = ("🔍 [MAIN] Initialize Google Secret Manager client...")
+        print(msg)
+        logging.info(msg)
+        
+        google_secret_client = secretmanager.SecretManagerServiceClient()
+
+        msg = ("✅ [MAIN] Successfully initialized Google Secret Manager client.")
+        print(msg)
+        logging.info(msg)
     
+    except Exception as e:
+        raise RuntimeError(
+            "❌ [MAIN] Failed to initialize Google Secret Manager client due to."
+            f"{e}."
+        )
+        
     secret_customer_id = (
         f"{COMPANY}_secret_{DEPARTMENT}_google_account_id_{ACCOUNT}"
     )
@@ -92,6 +112,12 @@ def main():
         .replace("-", "")
         .strip()
     )
+    msg = (
+        "✅ [MAIN] Successfully retrieved Google Ads customer_id "
+        f"{google_customer_id} from Google Secret Manager."
+    )
+    print(msg)
+    logging.info(msg)
 
     secret_credentials_json = (
         f"{COMPANY}_secret_all_google_token_access_user"
@@ -105,8 +131,9 @@ def main():
     google_ads_credentials = json.loads(
         secret_credentials_response.payload.data.decode("UTF-8")
     )
-
-    logging.info("🔐 [MAIN] Google Ads secrets loaded")
+    msg = ("✅ [MAIN] Successfully retrieved Google Ads credentials from Google Secret Manager.")
+    print(msg)
+    logging.info(msg)
 
 # Initialize global Google Ads client
     google_ads_config = {
@@ -117,45 +144,39 @@ def main():
         "login_customer_id": google_ads_credentials["login_customer_id"],
         "use_proto_plus": True,
     }
+    try:
+        msg = (
+            "🔍 [MAIN] Initializing global Google Ads client for customer_id "
+            f"{google_customer_id}..."
+        )
+        print(msg)
+        logging.info(msg)
 
-    google_ads_client = GoogleAdsClient.load_from_dict(
-        google_ads_config
-    )
+        google_ads_client = GoogleAdsClient.load_from_dict(
+            google_ads_config
+        )
 
-    msg = (
-        "✅ [MAIN] Successfully initialized global Google Ads client for customer_id "
-        f"{google_customer_id}."
-    )
-    print(msg)
-    logging.info(msg)
+        msg = (
+            "✅ [MAIN] Successfully initialized global Google Ads client for customer_id "
+            f"{google_customer_id}."
+        )
+        print(msg)
+        logging.info(msg)
+    
+    except Exception as e:
+        raise RuntimeError(
+            "❌ [MAIN] Failed to initialize global Google Ads client due to."
+            f"{e}."
+        )
+   
 
 # Execute DAGS
-    try:
-        logging.info(
-            f"[MAIN] Trigger Google Ads DAG | "
-            f"company={COMPANY} | "
-            f"customer_id={customer_id} | "
-            f"{start_date} → {end_date}"
-        )
-
-        print(
-            f"🚀 [MAIN] Google Ads run | "
-            f"customer_id={customer_id} | "
-            f"{start_date} → {end_date}"
-        )
-
-        dag_google_ads.dag__(
-            google_ads_client=google_ads_client,
-            customer_id=customer_id,
-            start_date=start_date,
-            end_date=end_date
-        )
-
-        logging.info("[MAIN] Google Ads run completed successfully")
-
-    except Exception as e:
-        logging.error(f"❌ [MAIN] Google Ads run failed: {e}")
-        raise
+    dags_google_ads(
+        google_ads_client=google_ads_client,
+        customer_id=google_customer_id,
+        start_date=start_date,
+        end_date=end_date
+    )
 
 # Entrypoint
 if __name__ == "__main__":
