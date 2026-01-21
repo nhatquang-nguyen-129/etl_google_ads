@@ -5,9 +5,13 @@ ROOT_FOLDER_LOCATION = Path(__file__).resolve().parents[0]
 sys.path.append(str(ROOT_FOLDER_LOCATION))
 
 from datetime import datetime, timedelta
+import json
 import importlib
 import logging
 from zoneinfo import ZoneInfo
+
+from google.ads.googleads.client import GoogleAdsClient
+from google.cloud import secretmanager
 
 COMPANY = os.getenv("COMPANY")
 PROJECT = os.getenv("PROJECT")
@@ -27,34 +31,24 @@ if not all([
 try:
     dag_google_ads = importlib.import_module("dags.dag_google_ads")
 except ModuleNotFoundError:
-    raise ImportError("❌ [MAIN] Failed to import dags.dag_google_ads")
+    raise ImportError("❌ [MAIN] Failed to execute Google Ads main entrypoint due todags.dag_google_ads cannot be imported.")
 
-# ------------------------------------------------------------------
-# SECRET MANAGER
-# ------------------------------------------------------------------
-from auth.internal_secret_manager import InternalGCPSecretManager
-from google.ads.googleads.client import GoogleAdsClient
-
-# ------------------------------------------------------------------
-# MAIN
-# ------------------------------------------------------------------
 def main():
     """
-    Google Ads Main Entrypoint
-    --------------------------------------------------
-    Responsibilities:
+    Google Ads entrypoint
+    ---------
+    Main is responsible for preparing the entire execution environment:
+        - Resolve execution time window from MODE
         - Read & validate OS environment variables
-        - Resolve MODE → (start_date, end_date) in GMT+7
-        - Translate env → secret IDs
         - Load secrets from GCP Secret Manager
-        - Initialize Google Ads client ONCE
-        - Dispatch execution to Google Ads DAG
-    --------------------------------------------------
+        - Initialize Google Ads client exactly once
+        - Dispatch execution to DAG orchestrator
+
+    DAGs must NOT initialize clients or read secrets.
+    DAGs only coordinate execution order and retries.
     """
 
-    # --------------------------------------------------
-    # 1. Resolve time range (GMT+7 – HCM)
-    # --------------------------------------------------
+# Resolve input time range
     ICT = ZoneInfo("Asia/Ho_Chi_Minh")
     today = datetime.now(ICT)
 
@@ -81,42 +75,61 @@ def main():
     else:
         raise ValueError(f"⚠️ [MAIN] Unsupported MODE='{MODE}'")
 
-    # --------------------------------------------------
-    # 2. Init Secret Manager
-    # --------------------------------------------------
-    secret_manager = InternalGCPSecretManager(project_id=PROJECT)
-
-    # --------------------------------------------------
-    # 3. Resolve secret IDs
-    # --------------------------------------------------
-    customer_id_secret = (
+# Resolve input from Google Secret Manager
+    google_secret_client = secretmanager.SecretManagerServiceClient()
+    
+    secret_customer_id = (
         f"{COMPANY}_secret_{DEPARTMENT}_google_account_id_{ACCOUNT}"
     )
+    secret_customer_name = (
+        f"projects/{PROJECT}/secrets/{secret_customer_id}/versions/latest"
+    )
+    secret_customer_response = google_secret_client.access_secret_version(
+        name=secret_customer_name
+    )
+    google_customer_id = (
+        json.loads(secret_customer_response.payload.data.decode("UTF-8"))["customer_id"]
+        .replace("-", "")
+        .strip()
+    )
 
-    credentials_secret = (
+    secret_credentials_json = (
         f"{COMPANY}_secret_all_google_token_access_user"
     )
-
-    # --------------------------------------------------
-    # 4. Load secrets
-    # --------------------------------------------------
-    customer_id = secret_manager.get_secret(customer_id_secret)["customer_id"]
-    customer_id = customer_id.replace("-", "").strip()
-
-    google_ads_credentials_dict = secret_manager.get_secret(
-        credentials_secret
+    secret_credentials_name = (
+        f"projects/{PROJECT}/secrets/{secret_credentials_json}/versions/latest"
+    )
+    secret_credentials_response = google_secret_client.access_secret_version(
+        name=secret_credentials_name
+    )
+    google_ads_credentials = json.loads(
+        secret_credentials_response.payload.data.decode("UTF-8")
     )
 
-    # --------------------------------------------------
-    # 5. Init Google Ads client (ONCE)
-    # --------------------------------------------------
+    logging.info("🔐 [MAIN] Google Ads secrets loaded")
+
+# Initialize global Google Ads client
+    google_ads_config = {
+        "developer_token": google_ads_credentials["developer_token"],
+        "client_id": google_ads_credentials["client_id"],
+        "client_secret": google_ads_credentials["client_secret"],
+        "refresh_token": google_ads_credentials["refresh_token"],
+        "login_customer_id": google_ads_credentials["login_customer_id"],
+        "use_proto_plus": True,
+    }
+
     google_ads_client = GoogleAdsClient.load_from_dict(
-        google_ads_credentials_dict
+        google_ads_config
     )
 
-    # --------------------------------------------------
-    # 6. Execute DAG
-    # --------------------------------------------------
+    msg = (
+        "✅ [MAIN] Successfully initialized global Google Ads client for customer_id "
+        f"{google_customer_id}."
+    )
+    print(msg)
+    logging.info(msg)
+
+# Execute DAGS
     try:
         logging.info(
             f"[MAIN] Trigger Google Ads DAG | "
@@ -144,10 +157,7 @@ def main():
         logging.error(f"❌ [MAIN] Google Ads run failed: {e}")
         raise
 
-
-# ------------------------------------------------------------------
-# ENTRYPOINT
-# ------------------------------------------------------------------
+# Entrypoint
 if __name__ == "__main__":
     try:
         main()

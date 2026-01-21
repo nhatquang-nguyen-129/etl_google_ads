@@ -1,105 +1,69 @@
-import logging
-from pathlib import Path
 import sys
-from typing import (
-    List, 
-    Dict
-)
-from google.ads.googleads.client import GoogleAdsClient
-from google.ads.googleads.errors import GoogleAdsException
+from pathlib import Path
 ROOT_FOLDER_LOCATION = Path(__file__).resolve().parents[2]
 sys.path.append(str(ROOT_FOLDER_LOCATION))
 
-def extract_campaign_metadata(
-    *,
-    google_ads_client,
-    customer_id: str,
-    campaign_id_list: List[str]
-) -> List[dict]:
-    """
-    Extract campaign metadata from Google Ads
-    ---------
-    Workflow:
-        1. Initialize Google Ads client using provided credentials
-        2. Execute GAQL query filtered by campaign_id list
-        3. Normalize API response into Python dictionaries
-        4. Return campaign metadata records
-    ---------
-    Parameters:
-        1. campaign.id
-        2. campaign.name
-        3. campaign.status
-        4. campaign.advertising_channel_type
-        5. campaign.advertising_channel_sub_type
-        6. campaign.serving_status
-        7. campaign.start_date
-        8. campaign.end_date
-    ---------
-    Returns:
-        1. List[dict]: Flattened campaign metadata records
-    """
+import logging
+import pandas as pd
+from pathlib import Path
+from typing import (
+    Union, 
+    List, 
+    Dict
+)
 
-    if not campaign_id_list:
-        return []
+def transform_campaign_metadata(
+    input_campaign_metadatas: Union[pd.DataFrame, List[Dict]]
+) -> pd.DataFrame:
 
-    _CAMPAIGN_METADATA_QUERY = f"""
-        SELECT
-            campaign.id,
-            campaign.name,
-            campaign.status,
-            campaign.advertising_channel_type,
-            campaign.advertising_channel_sub_type,
-            campaign.serving_status,
-            campaign.start_date,
-            campaign.end_date
-        FROM campaign
-        WHERE campaign.id IN ({",".join(map(str, campaign_id_list))})
-    """
+
+    if isinstance(input_campaign_metadatas, list):
+        input_campaign_metadatas = pd.DataFrame(input_campaign_metadatas)
 
     msg = (
-        "🔍 [EXTRACT] Extracting Google Ads campaign metadata for customer_id "
-        f"{customer_id} with "
-        f"{len(campaign_id_list)} campaign_id(s)... "
+        "🔄 [TRANSFORM] Transforming "
+        f"{len(input_campaign_metadatas)} row(s) of Google Ads campaign metadata..."
     )
     print(msg)
     logging.info(msg)
 
-    google_ads_service = google_ads_client.get_service("GoogleAdsService")
+    if input_campaign_metadatas.empty:
+        msg = "⚠️ [TRANSFORM] Empty input campaign metadata then transformation will be skipped."
+        print(msg)
+        logging.warning(msg)
+        return input_campaign_metadatas
 
-    rows: List[dict] = []
+    required_cols = {"campaign_name", "start_date"}
+    missing = required_cols - set(input_campaign_metadatas.columns)
+    if missing:
+        msg = f"⚠️ [TRANSFORM] Missing columns {missing} then transformation will be skipped."
+        print(msg)
+        logging.warning(msg)
+        return input_campaign_metadatas
 
-    try:
-        response = google_ads_service.search(
-            customer_id=customer_id,
-            query=_CAMPAIGN_METADATA_QUERY
-        )
+    df = input_campaign_metadatas.copy()
+    df["platform"] = "Google"
 
-        for row in response:
-            rows.append({
-                "customer_id": customer_id,
-                "campaign_id": row.campaign.id,
-                "campaign_name": row.campaign.name,
-                "campaign_status": row.campaign.status.name,
-                "channel_type": row.campaign.advertising_channel_type.name,
-                "channel_sub_type": row.campaign.advertising_channel_sub_type.name,
-                "serving_status": row.campaign.serving_status.name,
-                "start_date": row.campaign.start_date,
-                "end_date": row.campaign.end_date,
-            })
+    df = df.assign(
+        objective=lambda df: df["campaign_name"].fillna("").str.split("_").str[0].fillna("unknown"),
+        budget_group=lambda df: df["campaign_name"].fillna("").str.split("_").str[1].fillna("unknown"),
+        region=lambda df: df["campaign_name"].fillna("").str.split("_").str[2].fillna("unknown"),
+        category_level_1=lambda df: df["campaign_name"].fillna("").str.split("_").str[3].fillna("unknown"),
 
-        msg = (
-            "✅ [EXTRACT] Successfully extracted "
-            f"{len(rows)} row(s) of Google Ads campaign metadata."
-        )
-        print(msg)                
-        logging.info(msg)
+        track_group=lambda df: df["campaign_name"].fillna("").str.split("_").str[6].fillna("unknown"),
+        pillar_group=lambda df: df["campaign_name"].fillna("").str.split("_").str[7].fillna("unknown"),
+        content_group=lambda df: df["campaign_name"].fillna("").str.split("_").str[8].fillna("unknown"),
 
-    except GoogleAdsException as e:
-        msg = (
-            f"❌ [EXTRACT] Failed to extract Google Ads campaign metadata for "
-            f"{len(campaign_id_list)} campaign_id(s) due to "
-            f"{e}."
-        )
-        raise RuntimeError(msg)
+        date=lambda df: pd.to_datetime(df["start_date"], errors="coerce", utc=True).dt.floor("D"),
+        year=lambda df: pd.to_datetime(df["start_date"], errors="coerce", utc=True).dt.strftime("%Y"),
+        month=lambda df: pd.to_datetime(df["start_date"], errors="coerce", utc=True).dt.strftime("%Y-%m"),
+    ).drop(columns=["start_date", "end_date"], errors="ignore")
 
-    return rows
+    msg = (
+        "✅ [TRANSFORM] Successfully transformed "
+        f"{len(df)} row(s) of Google Ads campaign metadata."
+    )
+    print(msg)
+    logging.info(msg)
+
+    return df

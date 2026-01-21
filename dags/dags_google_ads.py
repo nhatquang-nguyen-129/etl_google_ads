@@ -5,12 +5,14 @@ ROOT_FOLDER_LOCATION = Path(__file__).resolve().parents[2]
 sys.path.append(str(ROOT_FOLDER_LOCATION))
 from datetime import datetime, timedelta
 import logging
+import pandas as pd
 import time
 
 from etl.extract_campaign_insights import extract_campaign_insights
 from etl.extract_campaign_metadata import extract_campaign_metadata
 from etl.transform_campaign_metadata import transform_campaign_metadata
 from etl.load_campaign_insights import load_campaign_insights
+from etl.load_campaign_metadata import load_campaign_metadata
 
 COMPANY = os.getenv("COMPANY")
 PROJECT = os.getenv("PROJECT")
@@ -18,6 +20,7 @@ DEPARTMENT = os.getenv("DEPARTMENT")
 ACCOUNT = os.getenv("ACCOUNT")
 MODE = os.getenv("MODE")
 
+# DAGS
 def dags_google_ads(
     *,
     google_ads_client,
@@ -35,7 +38,7 @@ def dags_google_ads(
     print(msg)
     logging.info(msg)
 
-    # Trigger Google Ads campaign insights DAG execution
+# ETL for Google Ads campaign insights
     DAGS_MAX_ATTEMPTS = 3
     DAGS_MIN_COOLDOWN = 60
     dags_start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
@@ -55,6 +58,8 @@ def dags_google_ads(
 
         for attempt in range(1, DAGS_MAX_ATTEMPTS + 1):
             try:
+
+    # Extract               
                 insights = extract_campaign_insights(
                     google_ads_client=google_ads_client,
                     customer_id=customer_id,
@@ -72,12 +77,32 @@ def dags_google_ads(
                     logging.warning(msg)
                     break
 
-                daily_campaign_ids = {
-                    row["campaign_id"] for row in insights
-                }
+    # Load
+                dags_split_year = pd.to_datetime(pd.DataFrame(insights)["date"].dropna().iloc[0]).year
+                dags_split_month = pd.to_datetime(pd.DataFrame(insights)["date"].dropna().iloc[0]).month
+
+                dags_campaign_insights = (
+                    f"{PROJECT}."
+                    f"{COMPANY}_dataset_google_api_raw."
+                    f"{COMPANY}_table_google_{DEPARTMENT}_{ACCOUNT}_campaign_m{dags_split_month:02d}{dags_split_year}"
+                )
+
+                msg = (
+                    "🔁 [DAG] Trigger to load Google Ads campaign insights from customer_id "
+                    f"{customer_id} for "
+                    f"{dags_split_date} to direction "
+                    f"{dags_campaign_insights}..."
+                )
+                print(msg)
+                logging.info(msg)
+
+                daily_campaign_ids = set(insights["campaign_id"].unique())
                 total_campaign_ids.update(daily_campaign_ids)
 
-                load_campaign_insights(insights)
+                load_campaign_insights(
+                    df=insights,
+                    direction=dags_campaign_insights
+                )
 
                 break
 
@@ -109,7 +134,7 @@ def dags_google_ads(
         time.sleep(DAGS_MIN_COOLDOWN)
         date_cursor += timedelta(days=1)
 
-    # Trigger Google Ads campaign metadata DAG execution
+    # ---------- Trigger Google Ads campaign metadata DAG ----------
     if not total_campaign_ids:
         msg = (
             "⚠️ [DAGS] No Google Ads campaign_id appended for customer_id "
@@ -128,18 +153,45 @@ def dags_google_ads(
     print(msg)
     logging.info(msg)
 
-    metadata = extract_campaign_metadata(
+    # ---------- Extract ----------
+    campaign_metadatas = extract_campaign_metadata(
         google_ads_client=google_ads_client,
         customer_id=customer_id,
-        campaign_id_list=list(all_campaign_ids),
+        campaign_id_list=list(total_campaign_ids),
     )
 
-    final_rows = transform_campaign_metadata(
-        insights=None,
-        metadata=metadata,
+    if not campaign_metadatas:
+        msg = "⚠️ [DAGS] Empty campaign metadata extracted then DAG execution will be skipped."
+        print(msg)
+        logging.warning(msg)
+        return
+
+    # ---------- Transform ----------
+    df_campaign_metadatas = transform_campaign_metadata(
+        campaign_metadatas
+    )
+
+    # ---------- DIM table direction (single table) ----------
+    campaign_metadata_table = (
+        f"{PROJECT}."
+        f"{COMPANY}_dataset_google_api_raw."
+        f"{COMPANY}_table_google_{DEPARTMENT}_{ACCOUNT}_campaign_metadata"
+    )
+
+    msg = (
+        "🔁 [DAGS] Trigger to load Google Ads campaign metadata to "
+        f"{campaign_metadata_table}..."
+    )
+    print(msg)
+    logging.info(msg)
+
+    # ---------- Load ----------
+    load_campaign_metadata(
+        df=df_campaign_metadatas,
+        direction=campaign_metadata_table,
     )
 
     logging.info(
-        f"[DAG] Google Ads DAG completed successfully | "
-        f"campaigns={len(all_campaign_ids)}"
+        f"✅ [DAG] Google Ads Campaign Metadata DAG completed successfully | "
+        f"campaigns={df_campaign_metadatas['campaign_id'].nunique()}"
     )
