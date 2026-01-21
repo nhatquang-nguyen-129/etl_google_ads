@@ -1,10 +1,8 @@
 import logging
 from pathlib import Path
 import sys
-from typing import (
-    List, 
-    Dict
-)
+from typing import List
+
 from google.ads.googleads.client import GoogleAdsClient
 from google.ads.googleads.errors import GoogleAdsException
 ROOT_FOLDER_LOCATION = Path(__file__).resolve().parents[2]
@@ -12,7 +10,7 @@ sys.path.append(str(ROOT_FOLDER_LOCATION))
 
 def extract_campaign_insights(
     *,
-    google_ads_credentials: Dict,
+    google_ads_client,
     customer_id: str,
     start_date: str,
     end_date: str
@@ -65,13 +63,6 @@ def extract_campaign_insights(
     print(msg)
     logging.info(msg)
 
-    # 1. Initialized Google Ads client
-    google_ads_client = GoogleAdsClient.load_from_dict({
-        **google_ads_credentials,
-        "use_proto_plus": True
-    })
-
-    # 2. Make API call
     google_ads_service = google_ads_client.get_service("GoogleAdsService")
     request = google_ads_client.get_type("SearchGoogleAdsStreamRequest")
 
@@ -82,7 +73,6 @@ def extract_campaign_insights(
 
     rows: List[dict] = []
 
-    # 3. Fetch
     try:
         stream = google_ads_service.search_stream(request=request)
 
