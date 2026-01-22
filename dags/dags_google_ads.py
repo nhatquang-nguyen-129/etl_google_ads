@@ -20,7 +20,6 @@ DEPARTMENT = os.getenv("DEPARTMENT")
 ACCOUNT = os.getenv("ACCOUNT")
 MODE = os.getenv("MODE")
 
-# DAGS
 def dags_google_ads(
     *,
     google_ads_client,
@@ -130,12 +129,29 @@ def dags_google_ads(
                         f"{attempt}/{DAGS_MAX_ATTEMPTS} attempt(s) due to exceeded attempt limit then DAG execution will be aborting."
                     ) from e
 
-                time.sleep(2 ** attempt)
+            wait_to_retry = 2 ** attempt
+            
+            msg = (
+                "🔁 [DAGS] Waiting "
+                f"{wait_to_retry} second(s) before retrying Google Ads API "
+                f"{attempt}/{DAGS_MAX_ATTEMPTS} attempt(s)..."
+            )
+            print(msg)
+            logging.warning(msg)
+
+            time.sleep(wait_to_retry)
+
+        msg = (
+            "🔁 [DAGS] Waiting "
+            f"{DAGS_MIN_COOLDOWN} second(s) cooldown before processing next date..."
+        )
+        print(msg)
+        logging.info(msg)
 
         time.sleep(DAGS_MIN_COOLDOWN)
-        date_cursor += timedelta(days=1)
+        dags_start_date += timedelta(days=1)
 
-    # ---------- Trigger Google Ads campaign metadata DAG ----------
+# ETL for Google Ads campaign metadata
     if not total_campaign_ids:
         msg = (
             "⚠️ [DAGS] No Google Ads campaign_id appended for customer_id "
@@ -154,14 +170,13 @@ def dags_google_ads(
     print(msg)
     logging.info(msg)
 
-    # ---------- Extract ----------
     campaign_metadatas = extract_campaign_metadata(
         google_ads_client=google_ads_client,
         customer_id=customer_id,
         campaign_id_list=list(total_campaign_ids),
     )
 
-    if not campaign_metadatas:
+    if campaign_metadatas.empty:
         msg = "⚠️ [DAGS] Empty campaign metadata extracted then DAG execution will be skipped."
         print(msg)
         logging.warning(msg)

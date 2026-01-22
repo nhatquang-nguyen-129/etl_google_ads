@@ -37,7 +37,7 @@ def extract_campaign_metadata(
         logging.info(msg)
         return pd.DataFrame()
     
-    campaign_ids_str = ", ".join([f"'{cid}'" for cid in campaign_id_list])
+    campaign_ids_str = ", ".join(str(cid) for cid in campaign_id_list)
 
     _QUERY_CAMPAIGN_METADATA = f"""
         SELECT
