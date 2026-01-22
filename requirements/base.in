@@ -17,6 +17,7 @@ google-auth
 google-auth-oauthlib
 google-cloud-bigquery
 google-cloud-bigquery-storage
+google-cloud-secret-manager
 google-cloud-storage
 
 # Serialization / utils
