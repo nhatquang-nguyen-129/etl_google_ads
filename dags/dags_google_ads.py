@@ -10,6 +10,7 @@ import time
 
 from etl.extract_campaign_insights import extract_campaign_insights
 from etl.extract_campaign_metadata import extract_campaign_metadata
+from etl.transform_campaign_insights import transform_campaign_insights
 from etl.transform_campaign_metadata import transform_campaign_metadata
 from etl.load_campaign_insights import load_campaign_insights
 from etl.load_campaign_metadata import load_campaign_metadata
@@ -76,6 +77,9 @@ def dags_google_ads(
                     logging.warning(msg)
                     break
 
+    # Transform
+                insights = transform_campaign_insights(insights)
+
     # Load
                 dags_split_year = pd.to_datetime(insights["date"].dropna().iloc[0]).year
                 dags_split_month = pd.to_datetime(insights["date"].dropna().iloc[0]).month
@@ -129,17 +133,17 @@ def dags_google_ads(
                         f"{attempt}/{DAGS_MAX_ATTEMPTS} attempt(s) due to exceeded attempt limit then DAG execution will be aborting."
                     ) from e
 
-            wait_to_retry = 2 ** attempt
-            
-            msg = (
-                "🔁 [DAGS] Waiting "
-                f"{wait_to_retry} second(s) before retrying Google Ads API "
-                f"{attempt}/{DAGS_MAX_ATTEMPTS} attempt(s)..."
-            )
-            print(msg)
-            logging.warning(msg)
+                wait_to_retry = 2 ** attempt
+                
+                msg = (
+                    "🔁 [DAGS] Waiting "
+                    f"{wait_to_retry} second(s) before retrying Google Ads API "
+                    f"{attempt}/{DAGS_MAX_ATTEMPTS} attempt(s)..."
+                )
+                print(msg)
+                logging.warning(msg)
 
-            time.sleep(wait_to_retry)
+                time.sleep(wait_to_retry)
 
         msg = (
             "🔁 [DAGS] Waiting "

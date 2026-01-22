@@ -36,7 +36,7 @@ def load_campaign_insights(
         df=df,
         direction=direction,
         mode="upsert",
-        keys=["date", "campaign_id"],
+        keys=["date"],
         partition={
             "field": "date"
         },

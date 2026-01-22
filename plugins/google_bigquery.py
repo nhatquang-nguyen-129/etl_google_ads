@@ -473,26 +473,54 @@ class GoogleBigqueryLoader:
                 f"{direction}..."
             )          
 
-            job_delete_exist = self.client.query(
-                f"""
-                DELETE FROM `{direction}` AS main
-                WHERE EXISTS (
-                    SELECT 1
-                    FROM `{temp_table}` AS temp
-                    WHERE {join_condition}
+            try:
+                job_delete_exist = self.client.query(
+                    f"""
+                    DELETE FROM `{direction}` AS main
+                    WHERE EXISTS (
+                        SELECT 1
+                        FROM `{temp_table}` AS temp
+                        WHERE {join_condition}
+                    )
+                    """
                 )
-                """
-            )
-            deleted_rows = job_delete_exist.result().num_dml_affected_rows or 0
-            
-            msg = (
-                "✅ [PLUGIN] Successfully deleted "
-                f"{deleted_rows}/{existing_count} row(s) in Google BigQuery table "
-                f"{direction} using temporary table contains  "
-                f"{keys} keys to delete."
-            )
-            print(msg)
-            logging.info(msg)
+                deleted_rows = job_delete_exist.result().num_dml_affected_rows or 0
+
+                msg = (
+                    "✅ [PLUGIN] Successfully deleted "
+                    f"{deleted_rows}/{existing_count} row(s) in Google BigQuery table "
+                    f"{direction} using temporary table contains "
+                    f"{keys} keys to delete."
+                )
+                print(msg)
+                logging.info(msg)
+
+            finally:
+                
+                try:
+                    msg = (
+                        "🔁 [PLUGIN] Deleting temporary table "
+                        f"{temp_table}..."
+                    )
+                    print(msg)
+                    logging.info(msg)                    
+                    
+                    self.client.query(f"DROP TABLE `{temp_table}`").result()
+                    
+                    msg = (
+                        "✅ [PLUGIN] Successfully deleted temporary table "
+                        f"{temp_table}."
+                    )
+                    print(msg)
+                    logging.info(msg)
+                
+                except Exception as e:
+                    raise RuntimeError (
+                        "❌ [PLUGIN] Failed to delete temporary table "
+                        f"{temp_table} due to "
+                        f"{e}."
+                    )
+
             return
 
         raise ValueError(
