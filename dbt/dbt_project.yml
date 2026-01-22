@@ -1,8 +1,8 @@
-name: ads_warehouse
+name: pipeline_digital_ads
 version: "1.0"
 config-version: 2
 
-profile: ads_warehouse
+profile: pipeline_google_ads
 
 model-paths: ["models"]
 analysis-paths: ["analysis"]
@@ -16,4 +16,13 @@ log-path: "logs"
 
 models:
   ads_warehouse:
-    +materialized: view
+
+    stg:
+      +materialized: ephemeral
+
+    int:
+      +materialized: ephemeral
+
+    mart:
+      +materialized: table
+      +tags: ["mart"]

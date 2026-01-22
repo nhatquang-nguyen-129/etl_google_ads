@@ -14,6 +14,7 @@ from etl.transform_campaign_insights import transform_campaign_insights
 from etl.transform_campaign_metadata import transform_campaign_metadata
 from etl.load_campaign_insights import load_campaign_insights
 from etl.load_campaign_metadata import load_campaign_metadata
+from dbt.run import dbt_google_ads
 
 COMPANY = os.getenv("COMPANY")
 PROJECT = os.getenv("PROJECT")
@@ -217,3 +218,14 @@ def dags_google_ads(
 
 
 # dbt
+    msg(msg)
+    logging.info(
+        f"✅ [DAG] Google Ads Campaign Metadata DAG completed successfully | "
+        f"campaigns={df_campaign_metadatas['campaign_id'].nunique()}"
+    )
+
+    dbt_google_ads(
+        project_dir=DBT_PROJECT_DIR,
+        profiles_dir=DBT_PROFILES_DIR,
+        google_cloud_project=PROJECT,
+    )

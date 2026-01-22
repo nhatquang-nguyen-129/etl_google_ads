@@ -8,8 +8,6 @@ import logging
 
 def dbt_google_ads(
     *,
-    project_dir: str,
-    profiles_dir: str,
     google_cloud_project: str,
 ):
     """
@@ -36,8 +34,8 @@ def dbt_google_ads(
     cmd = [
         "dbt",
         "build",
-        "--project-dir", project_dir,
-        "--profiles-dir", profiles_dir,
+        "--project-dir", "dbt",
+        "--profiles-dir", "dbt/profiles",
         "--select", "tag:mart",
     ]
 
@@ -72,7 +70,6 @@ def dbt_google_ads(
             "❌ [DBT] Failed to complete dbt build for Google Ads to Google Cloud Project"
             f"{google_cloud_project} due to "
             f"{e}."
-        )
-        
+        ) 
 
 

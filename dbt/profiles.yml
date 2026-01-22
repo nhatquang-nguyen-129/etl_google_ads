@@ -1,10 +1,20 @@
-pipeline_facebook_ads:
+pipeline_google_ads:
   target: dev
+
   outputs:
+
     dev:
       type: bigquery
-      method: oauth          # Switch to ADC auth from service-account.json
-      project: seer-retail-sales
-      dataset: kids_dataset_sales_api_mart
+      method: oauth
+      project: seer-digital-ads
+      dataset: kids_dataset_google_api_mart_dev
+      location: asia-southeast1
+      threads: 2
+
+    prod:
+      type: bigquery
+      method: oauth
+      project: "{{ env_var('PROJECT') }}"
+      dataset: "{{ env_var('COMPANY') }}_dataset_google_api_mart"
       location: asia-southeast1
       threads: 4
