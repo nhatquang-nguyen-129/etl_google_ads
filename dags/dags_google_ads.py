@@ -67,7 +67,7 @@ def dags_google_ads(
                     end_date=dags_split_date,
                 )
 
-                if not insights:
+                if insights.empty:
                     msg = (
                         "⚠️ [DAGS] No Google Ads campaign insights returned from customer_id "
                         f"{customer_id} then DAG execution "
@@ -78,8 +78,9 @@ def dags_google_ads(
                     break
 
     # Load
-                dags_split_year = pd.to_datetime(pd.DataFrame(insights)["date"].dropna().iloc[0]).year
-                dags_split_month = pd.to_datetime(pd.DataFrame(insights)["date"].dropna().iloc[0]).month
+                dags_split_year = pd.to_datetime(insights["date"].dropna().iloc[0]).year
+                dags_split_month = pd.to_datetime(insights["date"].dropna().iloc[0]).month
+
 
                 dags_campaign_insights = (
                     f"{PROJECT}."

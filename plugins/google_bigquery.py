@@ -243,7 +243,7 @@ class GoogleBigqueryLoader:
 
             table = bigquery.Table(
                 direction,
-                schema=self._infer_schema(df),
+                schema=self._infer_table_schema(df),
             )
 
             if partition:

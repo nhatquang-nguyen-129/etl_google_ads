@@ -29,7 +29,10 @@ def load_campaign_insights(
         f"{len(df)} row(s) of Google Ads campaign insights to Google BigQuery table "
         f"{direction}..."
         )
-    GoogleBigqueryLoader.load(
+    
+    loader = GoogleBigqueryLoader()
+
+    loader.load(
         df=df,
         direction=direction,
         mode="upsert",
