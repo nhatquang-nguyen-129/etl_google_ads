@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 import logging
 import pandas as pd
 import time
+import subprocess
 
 from etl.extract_campaign_insights import extract_campaign_insights
 from etl.extract_campaign_metadata import extract_campaign_metadata
@@ -83,7 +84,6 @@ def dags_google_ads(
     # Load
                 dags_split_year = pd.to_datetime(insights["date"].dropna().iloc[0]).year
                 dags_split_month = pd.to_datetime(insights["date"].dropna().iloc[0]).month
-
 
                 dags_campaign_insights = (
                     f"{PROJECT}."
@@ -176,24 +176,23 @@ def dags_google_ads(
     print(msg)
     logging.info(msg)
 
-    campaign_metadatas = extract_campaign_metadata(
+    # Extract
+    df_campaign_metadatas = extract_campaign_metadata(
         google_ads_client=google_ads_client,
         customer_id=customer_id,
         campaign_id_list=list(total_campaign_ids),
     )
 
-    if campaign_metadatas.empty:
-        msg = "⚠️ [DAGS] Empty campaign metadata extracted then DAG execution will be skipped."
+    if df_campaign_metadatas.empty:
+        msg = "⚠️ [DAGS] Empty campaign metadata extracted then DAG execution will be suspended."
         print(msg)
         logging.warning(msg)
         return
 
-    # ---------- Transform ----------
-    df_campaign_metadatas = transform_campaign_metadata(
-        campaign_metadatas
-    )
+    # Transform
+    df_campaign_metadatas = transform_campaign_metadata(df_campaign_metadatas)
 
-    # ---------- DIM table direction (single table) ----------
+    # Load
     campaign_metadata_table = (
         f"{PROJECT}."
         f"{COMPANY}_dataset_google_api_raw."
@@ -207,7 +206,6 @@ def dags_google_ads(
     print(msg)
     logging.info(msg)
 
-    # ---------- Load ----------
     load_campaign_metadata(
         df=df_campaign_metadatas,
         direction=campaign_metadata_table,

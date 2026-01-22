@@ -5,7 +5,6 @@ sys.path.append(str(ROOT_FOLDER_LOCATION))
 import logging
 from typing import List
 import pandas as pd
-from google.ads.googleads.client import GoogleAdsClient
 from google.ads.googleads.errors import GoogleAdsException
 
 def extract_campaign_insights(
@@ -83,14 +82,6 @@ def extract_campaign_insights(
                 })
 
         df = pd.DataFrame(rows)
-
-        if not df.empty:
-            df["date"] = pd.to_datetime(df["date"])
-            df["impressions"] = df["impressions"].astype("int64")
-            df["clicks"] = df["clicks"].astype("int64")
-            df["cost"] = df["cost"].astype("float64")
-            df["conversions"] = df["conversions"].astype("float64")
-            df["conversion_value"] = df["conversion_value"].astype("float64")
 
         msg = (
             "✅ [EXTRACT] Successfully extracted "

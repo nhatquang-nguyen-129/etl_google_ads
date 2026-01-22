@@ -46,6 +46,13 @@ def transform_campaign_insights(
         )
 
     df = df.copy()
+    df["customer_id"] = df["customer_id"].astype(str)
+    df["campaign_id"] = df["campaign_id"].astype(str)
+    df["impressions"] = df["impressions"].astype("int64")
+    df["clicks"] = df["clicks"].astype("int64")
+    df["cost"] = df["cost"].astype("float64")
+    df["conversions"] = df["conversions"].astype("float64")
+    df["conversion_value"] = df["conversion_value"].astype("float64")    
     df = df.assign(
         date=pd.to_datetime(df["date"], errors="coerce", utc=True).dt.floor("D"),
         year=pd.to_datetime(df["date"], errors="coerce", utc=True).dt.year,
