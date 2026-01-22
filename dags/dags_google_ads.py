@@ -211,21 +211,14 @@ def dags_google_ads(
         direction=campaign_metadata_table,
     )
 
-    logging.info(
-        f"✅ [DAG] Google Ads Campaign Metadata DAG completed successfully | "
-        f"campaigns={df_campaign_metadatas['campaign_id'].nunique()}"
-    )
-
 
 # dbt
-    msg(msg)
-    logging.info(
-        f"✅ [DAG] Google Ads Campaign Metadata DAG completed successfully | "
-        f"campaigns={df_campaign_metadatas['campaign_id'].nunique()}"
+    msg = (
+        "🔁 [DAGS] Trigger to materialize Google Ads campaign insights with dbt "
     )
-
+    print(msg)
+    logging.info(msg)
+    
     dbt_google_ads(
-        project_dir=DBT_PROJECT_DIR,
-        profiles_dir=DBT_PROFILES_DIR,
         google_cloud_project=PROJECT,
     )

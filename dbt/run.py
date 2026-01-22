@@ -31,11 +31,14 @@ def dbt_google_ads(
     print(msg)
     logging.info(msg)
 
+    DBT_PROJECT_DIR = ROOT_FOLDER_LOCATION / "dbt"
+    DBT_PROFILES_DIR = DBT_PROJECT_DIR / "profiles"
+
     cmd = [
         "dbt",
         "build",
-        "--project-dir", "dbt",
-        "--profiles-dir", "dbt/profiles",
+        "--project-dir", str(DBT_PROJECT_DIR),
+        "--profiles-dir", str(DBT_PROFILES_DIR),
         "--select", "tag:mart",
     ]
 
