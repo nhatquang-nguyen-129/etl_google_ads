@@ -15,3 +15,8 @@ ENV/
 
 # Google Ads OAuth desktop client secret
 auth/oauth2_desktop_client.json
+
+# dbt artifacts
+dbt/target/
+dbt/logs/
+dbt/dbt_packages/
