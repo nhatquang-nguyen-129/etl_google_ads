@@ -29,14 +29,18 @@ def load_campaign_metadata(
         f"{len(df)} row(s) of Google Ads campaign metadata to Google BigQuery table "
         f"{direction}..."
         )
-    GoogleBigqueryLoader.load(
+    
+    loader = GoogleBigqueryLoader()
+
+    loader.load(
         df=df,
         direction=direction,
         mode="upsert",
-        keys=["date", "campaign_id"],
-        partition={
-            "field": "date"
-        },
+        keys=[
+            "customer_id", 
+            "campaign_id"
+        ],
+        partition=None,
         cluster=[
             "campaign_id"
         ],
