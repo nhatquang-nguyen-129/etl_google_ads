@@ -7,7 +7,6 @@ from datetime import datetime, timedelta
 import logging
 import pandas as pd
 import time
-import subprocess
 
 from etl.extract_campaign_insights import extract_campaign_insights
 from etl.extract_campaign_metadata import extract_campaign_metadata
@@ -215,3 +214,6 @@ def dags_google_ads(
         f"✅ [DAG] Google Ads Campaign Metadata DAG completed successfully | "
         f"campaigns={df_campaign_metadatas['campaign_id'].nunique()}"
     )
+
+
+# dbt
