@@ -23,23 +23,15 @@ def extract_campaign_insights(
     Workflow:
         1. Initialize Google Ads client using provided credentials
         2. Execute GAQL query for campaign insights
-        3. Stream & normalize results
-            - Uses search_stream API for large datasets
-            - Flattens API response into Python dictionaries
-            - Converts cost from micros to standard currency unit
+        3. Stream using search_stream API for large datasets
         4. Return extracted data
     ---------
-    Grain:
-        - Date
-        - Customer
-        - Campaign
-    ---------
     Returns:
-        List[dict]
+        1. DataFrame:
             Flattened campaign insight records suitable for analytics pipelines
     """
 
-    _CAMPAIGN_INSIGHTS_QUERY = f"""
+    _QUERY_CAMPAIGN_INSIGHTS = f"""
         SELECT
             segments.date,
             customer.id,
@@ -69,7 +61,7 @@ def extract_campaign_insights(
     request = google_ads_client.get_type("SearchGoogleAdsStreamRequest")
 
     request.customer_id = customer_id
-    request.query = _CAMPAIGN_INSIGHTS_QUERY
+    request.query = _QUERY_CAMPAIGN_INSIGHTS
 
     rows: List[dict] = []
     batch_count = 0

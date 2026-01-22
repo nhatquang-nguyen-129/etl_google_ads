@@ -69,7 +69,7 @@ def dags_google_ads(
 
                 if not insights:
                     msg = (
-                        "⚠️ [DAG] No Google Ads campaign insights returned from customer_id "
+                        "⚠️ [DAGS] No Google Ads campaign insights returned from customer_id "
                         f"{customer_id} then DAG execution "
                         f"{dags_split_date} will be skipped."
                     )

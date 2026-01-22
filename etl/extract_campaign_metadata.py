@@ -3,37 +3,41 @@ from pathlib import Path
 import sys
 from typing import List
 
+import pandas as pd
+
 from google.ads.googleads.client import GoogleAdsClient
 from google.ads.googleads.errors import GoogleAdsException
 ROOT_FOLDER_LOCATION = Path(__file__).resolve().parents[2]
 sys.path.append(str(ROOT_FOLDER_LOCATION))
 
-
 def extract_campaign_metadata(
     google_ads_client,
     customer_id: str,
-    campaign_id_list: list[str],
-) -> list[dict]:
+    campaign_id_list: List[str],
+) -> pd.DataFrame:
     """
-    Extract Google Ads campaign metadata (no metrics).
-
-    This function is responsible for:
-        - Fetching static & semi-static campaign attributes
-        - Returning normalized campaign metadata for downstream joins
-        - NOT performing aggregation or transformation
-
-    Expected to be called AFTER campaign insights extraction.
+    Extract Campaign Metadata from Google Ads
+    ---------
+    Workflow:
+        1. Initialize Google Ads client using provided credentials
+        2. Execute GAQL query to fetch campaign-level attributes
+        3. Normalize API response into tabular structure
+        4. Return extracted metadata
+    ---------
+    Returns:
+        1. DataFrame:
+            Flattened campaign metadata records suitable for
+            dimension tables and downstream joins
     """
 
     if not campaign_id_list:
-        return []
+        return pd.DataFrame()
 
-    ga_service = google_ads_client.get_service("GoogleAdsService")
+    google_ads_service = google_ads_client.get_service("GoogleAdsService")
 
-    # Convert list to comma-separated string for GAQL
     campaign_ids_str = ", ".join([f"'{cid}'" for cid in campaign_id_list])
 
-    query = f"""
+    _QUERY_CAMPAIGN_METADATA = f"""
         SELECT
             campaign.id,
             campaign.name,
@@ -66,12 +70,12 @@ def extract_campaign_metadata(
         query=query,
     )
 
-    campaign_metadatas: list[dict] = []
+    rows: List[dict] = []
 
     for row in response:
         campaign = row.campaign
 
-        campaign_metadatas.append({
+        rows.append({
             # Identifiers
             "customer_id": str(row.customer.id),
             "campaign_id": str(campaign.id),
@@ -113,4 +117,12 @@ def extract_campaign_metadata(
             "final_url_suffix": campaign.final_url_suffix,
         })
 
-    return campaign_metadatas
+    df = pd.DataFrame(rows)
+
+    if not df.empty:
+        df["start_date"] = pd.to_datetime(df["start_date"], errors="coerce")
+        df["end_date"] = pd.to_datetime(df["end_date"], errors="coerce")
+        df["target_cpa"] = df["target_cpa"].astype("float64")
+        df["target_roas"] = df["target_roas"].astype("float64")
+
+    return df
