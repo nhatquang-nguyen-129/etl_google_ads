@@ -20,3 +20,7 @@ auth/oauth2_desktop_client.json
 dbt/target/
 dbt/logs/
 dbt/dbt_packages/
+dbt/user.yml
+dbt/.user.yml
+.dbt/user.yml
+.dbt/.user.yml
