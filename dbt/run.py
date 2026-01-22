@@ -1,6 +1,6 @@
 import sys
 from pathlib import Path
-ROOT_FOLDER_LOCATION = Path(__file__).resolve().parents[2]
+ROOT_FOLDER_LOCATION = Path(__file__).resolve().parents[0]
 sys.path.append(str(ROOT_FOLDER_LOCATION))
 import subprocess
 import os
@@ -31,8 +31,8 @@ def dbt_google_ads(
     print(msg)
     logging.info(msg)
 
-    DBT_PROJECT_DIR = ROOT_FOLDER_LOCATION / "dbt"
-    DBT_PROFILES_DIR = DBT_PROJECT_DIR / "profiles"
+    DBT_PROJECT_DIR = ROOT_FOLDER_LOCATION
+    DBT_PROFILES_DIR = DBT_PROJECT_DIR
 
     cmd = [
         "dbt",

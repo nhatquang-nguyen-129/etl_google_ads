@@ -15,7 +15,7 @@ target-path: "target"
 log-path: "logs"
 
 models:
-  ads_warehouse:
+  pipeline_digital_ads:
 
     stg:
       +materialized: ephemeral
