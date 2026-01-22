@@ -152,8 +152,17 @@ def dags_google_ads(
         print(msg)
         logging.info(msg)
 
-        time.sleep(DAGS_MIN_COOLDOWN)
         dags_start_date += timedelta(days=1)
+        
+        if dags_start_date <= dags_end_date:
+            msg = (
+                "🔁 [DAGS] Waiting "
+                f"{DAGS_MIN_COOLDOWN} second(s) cooldown before processing next date..."
+            )
+            print(msg)
+            logging.info(msg)
+
+            time.sleep(DAGS_MIN_COOLDOWN)
 
 # ETL for Google Ads campaign metadata
     if not total_campaign_ids:

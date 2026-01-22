@@ -378,7 +378,7 @@ class GoogleBigqueryLoader:
                     return
 
                 msg = (
-                    "🔍 [PLUGIN] Deleting existing row(s) in Google BigQuery table..."
+                    "🔍 [PLUGIN] Deleting existing row(s) in Google BigQuery table "
                     f"{direction}..."
                 )
                 print(msg)

@@ -36,7 +36,7 @@ def transform_campaign_insights(
         logging.warning(msg)
         return df
 
-    required_cols = {"start_date"}
+    required_cols = {"date"}
 
     missing = required_cols - set(df.columns)
     if missing:
@@ -47,15 +47,9 @@ def transform_campaign_insights(
 
     df = df.copy()
     df = df.assign(
-        date=pd.to_datetime(df["start_date"], errors="coerce", utc=True).dt.floor("D"),
-        year=pd.to_datetime(df["start_date"], errors="coerce", utc=True).dt.year,
-        month=pd.to_datetime(df["start_date"], errors="coerce", utc=True).dt.strftime("%Y-%m"),
-    )
-    df = df.drop(
-        columns=[
-            "start_date", 
-            "end_date"
-        ], errors="ignore"
+        date=pd.to_datetime(df["date"], errors="coerce", utc=True).dt.floor("D"),
+        year=pd.to_datetime(df["date"], errors="coerce", utc=True).dt.year,
+        month=pd.to_datetime(df["date"], errors="coerce", utc=True).dt.strftime("%Y-%m"),
     )
 
     msg = (
