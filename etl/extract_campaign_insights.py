@@ -34,8 +34,6 @@ def extract_campaign_insights(
             segments.date,
             customer.id,
             campaign.id,
-            campaign.name,
-            campaign.status,
             campaign.advertising_channel_type,
             metrics.impressions,
             metrics.clicks,
