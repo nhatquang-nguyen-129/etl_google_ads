@@ -3,6 +3,8 @@ from pathlib import Path
 import sys
 from typing import List
 
+import pandas as pd
+
 from google.ads.googleads.client import GoogleAdsClient
 from google.ads.googleads.errors import GoogleAdsException
 ROOT_FOLDER_LOCATION = Path(__file__).resolve().parents[2]
@@ -14,7 +16,7 @@ def extract_campaign_insights(
     customer_id: str,
     start_date: str,
     end_date: str
-) -> List[dict]:
+) -> pd.DataFrame:
     """
     Extract Campaign Insights from Google Ads
     ---------
@@ -37,7 +39,7 @@ def extract_campaign_insights(
             Flattened campaign insight records suitable for analytics pipelines
     """
 
-    _CAMPAIGN_INSIGHTS_QUERY = """
+    _CAMPAIGN_INSIGHTS_QUERY = f"""
         SELECT
             segments.date,
             customer.id,
@@ -51,7 +53,7 @@ def extract_campaign_insights(
             metrics.conversions,
             metrics.conversions_value
         FROM campaign
-        WHERE segments.date BETWEEN @start_date AND @end_date
+        WHERE segments.date BETWEEN '{start_date}' AND '{end_date}'
     """
 
     msg = (
@@ -68,10 +70,9 @@ def extract_campaign_insights(
 
     request.customer_id = customer_id
     request.query = _CAMPAIGN_INSIGHTS_QUERY
-    request.parameter_values["start_date"].string_value = start_date
-    request.parameter_values["end_date"].string_value = end_date
 
     rows: List[dict] = []
+    batch_count = 0
 
     try:
         stream = google_ads_service.search_stream(request=request)
@@ -92,14 +93,25 @@ def extract_campaign_insights(
                     "conversions": row.metrics.conversions,
                     "conversion_value": row.metrics.conversions_value,
                 })
-        
+
+        df = pd.DataFrame(rows)
+
+        if not df.empty:
+            df["date"] = pd.to_datetime(df["date"])
+            df["impressions"] = df["impressions"].astype("int64")
+            df["clicks"] = df["clicks"].astype("int64")
+            df["cost"] = df["cost"].astype("float64")
+            df["conversions"] = df["conversions"].astype("float64")
+            df["conversion_value"] = df["conversion_value"].astype("float64")
+
         msg = (
             "✅ [EXTRACT] Successfully extracted "
-            f"{len(rows)} row(s) of Google Ads campaign insights with "
-            f"{batch_count} batch(es)."
+            f"{len(df)} row(s) with {batch_count} batch(es)."
         )
-        print(msg)                
+        print(msg)
         logging.info(msg)
+
+        return df
 
     except GoogleAdsException as e:
         for error in e.failure.errors:

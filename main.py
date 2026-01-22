@@ -44,11 +44,22 @@ def main():
     DAGs must NOT initialize clients or read secrets.
     DAGs only coordinate execution order and retries.
     """
+    
+    msg = (
+        "🔄 [MAIN] Triggering to update Google Ads for "
+        f"{ACCOUNT} account of "
+        f"{DEPARTMENT} department in "
+        f"{COMPANY} company with "
+        f"{MODE} mode to Google Cloud project "
+        f"{PROJECT}..."
+    )
+    print(msg)
+    logging.info(msg)    
 
 # Resolve input time range
     ICT = ZoneInfo("Asia/Ho_Chi_Minh")
     today = datetime.now(ICT)
-
+    
     if MODE == "today":
         start_date = end_date = today.strftime("%Y-%m-%d")
 
