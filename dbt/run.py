@@ -14,9 +14,9 @@ def dbt_google_ads(
     Run dbt Models for Google Ads Mart
     ---------
     Workflow:
-        1. Initialize dbt execution environment (working directory, profiles, target)
+        1. Initialize dbt execution environment (directory, profiles, target)
         2. Trigger dbt build command for Google Ads models
-        3. Capture dbt execution logs (stdout, stderr)
+        3. Capture dbt execution logs with stdout and stderr
         4. Raise exception if dbt execution fails
     ---------
     Returns:
