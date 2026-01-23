@@ -17,8 +17,7 @@ models:
       +materialized: table
       +tags: ["mart"]
 `
-
 vars:
   company: "{{ env_var('COMPANY') }}"
   department: "{{ env_var('DEPARTMENT') }}"
-  account: "{{ env_var('ACCOUNT') }}" 
+  account: "{{ env_var('ACCOUNT') }}"
