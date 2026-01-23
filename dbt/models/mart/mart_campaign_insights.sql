@@ -19,6 +19,6 @@ select
     clicks,
     cost,
     conversions,
-    conversion_value,
+    conversion_value
 
 from {{ ref('int_campaign_insights') }}
