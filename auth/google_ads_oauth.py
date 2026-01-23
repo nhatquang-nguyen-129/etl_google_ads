@@ -54,7 +54,7 @@ def internal_bootstrap_oauth():
     print("\nNEXT STEPS")
     print("1. Copy the credential payload above")
     print("2. Store it securely with Secret Manager/Vault/Encrypted file")
-    print("3. Use it to initialize GoogleAdsClient in production")
+    print("3. Use it to initialize GoogleAdsClient")
     print("4. This OAuth bootstrap only needs to be run only ONCE")
 
     print("\n" + "=" * 64 + "\n")
