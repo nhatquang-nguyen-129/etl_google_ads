@@ -7,9 +7,14 @@ select
 
     m.campaign_name,
     m.campaign_status,
-    m.serving_status,
-    m.advertising_channel_type,
-    m.bidding_strategy_type,
+    m.platform,
+    m.objective,
+    m.budget_group,
+    m.region,
+    m.category_level_1,
+    m.track_group,
+    m.pillar_group,
+    m.content_group,
 
     i.impressions,
     i.clicks,

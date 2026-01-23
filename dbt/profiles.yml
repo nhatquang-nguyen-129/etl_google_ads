@@ -7,7 +7,7 @@ pipeline_google_ads:
       type: bigquery
       method: oauth
       project: seer-digital-ads
-      dataset: kids_dataset_google_api_mart_dev
+      dataset: kids_dataset_google_api_mart
       location: asia-southeast1
       threads: 2
 
