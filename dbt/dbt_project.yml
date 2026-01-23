@@ -4,7 +4,6 @@ config-version: 2
 
 profile: pipeline_google_ads
 
-# Paths
 model-paths: ["models"]
 analysis-paths: ["analysis"]
 test-paths: ["tests"]
@@ -16,6 +15,7 @@ target-path: "target"
 log-path: "logs"
 
 vars:
+  project: "{{ target.project }}"
   company: "{{ env_var('COMPANY') }}"
   department: "{{ env_var('DEPARTMENT') }}"
   account: "{{ env_var('ACCOUNT') }}"
