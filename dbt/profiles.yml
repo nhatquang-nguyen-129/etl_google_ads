@@ -1,20 +1,10 @@
 pipeline_google_ads:
   target: dev
-
   outputs:
-
     dev:
       type: bigquery
       method: oauth
       project: seer-digital-ads
-      dataset: kids_dataset_google_api_mart
-      location: asia-southeast1
-      threads: 2
-
-    prod:
-      type: bigquery
-      method: oauth
-      project: "{{ env_var('PROJECT') }}"
       dataset: "{{ env_var('COMPANY') }}_dataset_google_api_mart"
       location: asia-southeast1
-      threads: 4
+      threads: 2

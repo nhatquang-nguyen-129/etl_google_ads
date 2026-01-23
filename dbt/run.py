@@ -5,6 +5,13 @@ sys.path.append(str(ROOT_FOLDER_LOCATION))
 import subprocess
 import os
 import logging
+import json
+
+COMPANY = os.getenv("COMPANY")
+PROJECT = os.getenv("PROJECT")
+DEPARTMENT = os.getenv("DEPARTMENT")
+ACCOUNT = os.getenv("ACCOUNT")
+MODE = os.getenv("MODE")
 
 def dbt_google_ads(
     *,
@@ -31,27 +38,31 @@ def dbt_google_ads(
     print(msg)
     logging.info(msg)
 
-    DBT_PROJECT_DIR = ROOT_FOLDER_LOCATION
-    DBT_PROFILES_DIR = DBT_PROJECT_DIR
+    # ===============================
+    # INLINE ENV → DBT CONFIG
+    # ===============================
+    os.environ["PROJECT"] = google_cloud_project
+    os.environ["DBT_DATASET"] = f"{COMPANY}_dataset_google_api_mart"
+
+    # vars for dbt_project.yml
+    os.environ["COMPANY"] = COMPANY
+    os.environ["DEPARTMENT"] = DEPARTMENT
+    os.environ["ACCOUNT"] = ACCOUNT
 
     cmd = [
         "dbt",
         "build",
-        "--project-dir", str(DBT_PROJECT_DIR),
-        "--profiles-dir", str(DBT_PROFILES_DIR),
+        "--project-dir", "dbt",
+        "--profiles-dir", "dbt",
         "--select", "tag:mart",
     ]
 
     try:
         result = subprocess.run(
             cmd,
-            capture_output=True,
-            text=True,
             check=True,
-            env={
-                **os.environ,
-                "GOOGLE_CLOUD_PROJECT": google_cloud_project,
-            },
+            env={**os.environ},
+            text=True,
         )
 
         print(result.stdout)

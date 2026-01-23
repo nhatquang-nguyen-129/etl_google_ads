@@ -1,18 +1,22 @@
 {{ config(materialized='ephemeral') }}
 
-{% set raw_schema = var('company') ~ '_dataset_google_api_raw' %}
-{% set table_prefix = var('company') ~ '_table_google_' ~ var('department') ~ '_' ~ var('account') ~ '_campaign_' %}
+{% set company = var('company') %}
+{% set department = var('department') %}
+{% set account = var('account') %}
+
+{% set raw_schema = company ~ '_dataset_google_api_raw' %}
+{% set table_prefix = company ~ '_table_google_' ~ department ~ '_' ~ account ~ '_campaign_' %}
 
 {% if execute %}
 
     {% set tables_query %}
         select table_name
-        from `{{ var('project') }}.{{ raw_schema }}.INFORMATION_SCHEMA.TABLES`
+        from `{{ target.project }}.{{ raw_schema }}.INFORMATION_SCHEMA.TABLES`
         where table_name like '{{ table_prefix }}m______'
     {% endset %}
 
     {% set results = run_query(tables_query) %}
-    {% set table_names = results.columns[0].values() %}
+    {% set table_names = results.columns[0].values() if results is not none else [] %}
 
 {% else %}
 
@@ -23,14 +27,14 @@
 {% if table_names | length == 0 %}
 
     select
-        null as customer_id,
-        null as campaign_id,
-        null as date,
-        null as impressions,
-        null as clicks,
-        null as cost,
-        null as conversions,
-        null as conversion_value
+        cast(null as string)  as customer_id,
+        cast(null as string)  as campaign_id,
+        cast(null as date)    as date,
+        cast(null as int64)   as impressions,
+        cast(null as int64)   as clicks,
+        cast(null as numeric) as cost,
+        cast(null as int64)   as conversions,
+        cast(null as numeric) as conversion_value
     where false
 
 {% else %}
@@ -46,7 +50,7 @@ select
     cost,
     conversions,
     conversion_value
-from `{{ var('project') }}.{{ raw_schema }}.{{ table_name }}`
+from `{{ target.project }}.{{ raw_schema }}.{{ table_name }}`
 {% if not loop.last %} union all {% endif %}
 
 {% endfor %}
