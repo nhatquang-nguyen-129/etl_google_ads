@@ -1,10 +1,6 @@
 {{ 
   config(
-    materialized = 'table',
-
-    schema = var('company') ~ '_dataset_google_api_mart',
-    alias  = var('company') ~ '_table_google_all_all_campaign_performance',
-
+    alias = var('company') ~ '_table_google_all_all_campaign_performance',
     partition_by = {
       "field": "date",
       "data_type": "date"
