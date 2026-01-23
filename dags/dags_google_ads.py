@@ -211,11 +211,8 @@ def dags_google_ads(
         direction=campaign_metadata_table,
     )
 
-
 # Materialization with dbt
-    msg = (
-        "🔁 [DAGS] Trigger to materialize Google Ads campaign insights with dbt "
-    )
+    msg = ("🔁 [DAGS] Trigger to materialize Google Ads campaign insights with dbt...")
     print(msg)
     logging.info(msg)
     
