@@ -1,7 +1,8 @@
 {{ config(materialized='ephemeral') }}
 
 select
-    i.date,
+    date(i.date) as date,
+
     i.customer_id,
     i.campaign_id,
 
