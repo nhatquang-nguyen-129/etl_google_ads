@@ -92,7 +92,7 @@ def dags_google_ads(
                 )
 
                 msg = (
-                    "🔁 [DAG] Trigger to load Google Ads campaign insights from customer_id "
+                    "🔁 [DAGS] Trigger to load Google Ads campaign insights from customer_id "
                     f"{customer_id} for "
                     f"{dags_split_date} to direction "
                     f"{dags_campaign_insights}..."
@@ -212,7 +212,7 @@ def dags_google_ads(
     )
 
 
-# dbt
+# Materialization with dbt
     msg = (
         "🔁 [DAGS] Trigger to materialize Google Ads campaign insights with dbt "
     )
