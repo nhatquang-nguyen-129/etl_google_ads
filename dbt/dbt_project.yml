@@ -4,17 +4,10 @@ config-version: 2
 
 profile: 'pipeline_google_ads'
 
-model-paths: ["models"]
-analysis-paths: ["analysis"]
-test-paths: ["tests"]
-seed-paths: ["seeds"]
-macro-paths: ["macros"]
-snapshot-paths: ["snapshots"]
-
-target-path: "target"
-clean-targets:
-  - "target"
-  - "dbt_packages"
+vars:
+  company: "{{ env_var('COMPANY') }}"
+  department: "{{ env_var('DEPARTMENT') }}"
+  account: "{{ env_var('ACCOUNT') }}"
 
 models:
   pipeline_google_ads:
