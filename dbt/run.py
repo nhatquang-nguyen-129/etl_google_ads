@@ -25,7 +25,7 @@ def dbt_google_ads(
     """
 
     msg = (
-        "🔁 [DBT] Running dbt build for Google Ads materialization to Google Cloud Project..."
+        "🔁 [DBT] Running dbt build for Google Ads materialization to Google Cloud Project "
         f"{google_cloud_project}..."
     )
     print(msg)
@@ -73,6 +73,4 @@ def dbt_google_ads(
             "❌ [DBT] Failed to complete dbt build for Google Ads to Google Cloud Project"
             f"{google_cloud_project} due to "
             f"{e}."
-        ) 
-
-
+        )
