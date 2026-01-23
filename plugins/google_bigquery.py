@@ -152,7 +152,8 @@ class GoogleBigqueryLoader:
     def _create_new_dataset(
             self, 
             project: str, 
-            dataset: str
+            dataset: str,
+            location: str = "asia-southeast1",
             ) -> None:
         
         full_dataset_id = f"{project}.{dataset}"
@@ -163,6 +164,7 @@ class GoogleBigqueryLoader:
             logging.info(msg)
 
             dataset_config = bigquery.Dataset(full_dataset_id)
+            dataset_config.location = location
             self.client.create_dataset(dataset_config, exists_ok=True)
 
             msg = f"✅ [PLUGIN] Successfully created Google BigQuery dataset {full_dataset_id}."
