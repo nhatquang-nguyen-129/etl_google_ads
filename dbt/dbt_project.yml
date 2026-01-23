@@ -1,8 +1,8 @@
-name: 'pipeline_digital_ads'
+name: 'pipeline_google_ads'
 version: '1.0.0'
 config-version: 2
 
-profile: 'pipeline_digital_ads'
+profile: 'pipeline_google_ads'
 
 model-paths: ["models"]
 analysis-paths: ["analysis"]
@@ -17,7 +17,7 @@ clean-targets:
   - "dbt_packages"
 
 models:
-  pipeline_digital_ads:
+  pipeline_google_ads:
 
     raw:
       +materialized: view
