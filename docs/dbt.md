@@ -15,7 +15,7 @@
 
 - Join fact and dimension tables
 - Define final analytical grain
-- Build mart tables for BI / analytics
+- Build mart tables for BI/analytics
 - Manage model dependencies using `ref()`
 
 ---
