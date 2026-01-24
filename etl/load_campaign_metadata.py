@@ -6,7 +6,7 @@ sys.path.append(str(ROOT_FOLDER_LOCATION))
 import logging
 import pandas as pd
 
-from plugins.google_bigquery import GoogleBigqueryLoader
+from plugins.google_bigquery import internalGoogleBigqueryLoader
 
 def load_campaign_metadata(
     *,
@@ -39,7 +39,7 @@ def load_campaign_metadata(
         f"{direction}..."
         )
     
-    loader = GoogleBigqueryLoader()
+    loader = internalGoogleBigqueryLoader()
 
     loader.load(
         df=df,
