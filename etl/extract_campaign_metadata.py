@@ -77,7 +77,6 @@ def extract_campaign_metadata(
                 "campaign_id": str(campaign.id),
                 "campaign_name": campaign.name,
                 "campaign_status": campaign.status.name,
-                "serving_status": campaign.serving_status.name,
             })
 
         df = pd.DataFrame(rows)
