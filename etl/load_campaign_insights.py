@@ -19,7 +19,9 @@ def load_campaign_insights(
     Workflow:
         1. Validate input DataFrame
         2. Validate output direction for Google BigQuery
-        3. Make internalGoogleBigQueryLoader API call
+        3. Set primary key(s) to date
+        4. Use UPSERT mode with parameterized query for deduplication
+        5. Make internalGoogleBigQueryLoader API call
     ---------
     Returns:
         None

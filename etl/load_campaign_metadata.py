@@ -1,5 +1,11 @@
+import sys
+from pathlib import Path
+ROOT_FOLDER_LOCATION = Path(__file__).resolve().parents[2]
+sys.path.append(str(ROOT_FOLDER_LOCATION))
+
 import logging
 import pandas as pd
+
 from plugins.google_bigquery import GoogleBigqueryLoader
 
 def load_campaign_metadata(
@@ -8,15 +14,16 @@ def load_campaign_metadata(
     direction: str,
 ) -> None:
     """
-    Google Ads campaign metadata loader
+    Load Google Ads campaign metadata
     ----------------------
     Workflow:
-        - UPSERT by (date, campaign_id)
-        - Re-runnable safely
-        - Append after deleting conflicts
-            Table grain:
-        date + campaign_id
-    """    
+        1. Validate input DataFrame
+        2. Validate output direction for Google BigQuery
+        3. Make internalGoogleBigQueryLoader API call
+    ---------
+    Returns:
+        None
+    """      
 
     if df.empty:
         msg = ("⚠️ [LOADER] Empty Google Ads campaign metadata Dataframe then loading will be skipped.")
