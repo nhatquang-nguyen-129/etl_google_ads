@@ -39,7 +39,7 @@ def main():
         2. Read & validate OS environment variables
         3. Load secrets from GCP Secret Manager
         4. Initialize global Google Ads client
-        5. Dispatch execution to DAG orchestrator
+        5. Dispatch execution to DAGs orchestrator
     ---------
     Returns:
         None
