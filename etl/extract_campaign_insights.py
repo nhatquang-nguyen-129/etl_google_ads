@@ -2,9 +2,11 @@ import sys
 from pathlib import Path
 ROOT_FOLDER_LOCATION = Path(__file__).resolve().parents[2]
 sys.path.append(str(ROOT_FOLDER_LOCATION))
+
 import logging
 from typing import List
 import pandas as pd
+
 from google.ads.googleads.errors import GoogleAdsException
 
 def extract_campaign_insights(
