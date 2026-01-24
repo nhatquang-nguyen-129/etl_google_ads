@@ -2,6 +2,7 @@ import sys
 from pathlib import Path
 ROOT_FOLDER_LOCATION = Path(__file__).resolve().parents[2]
 sys.path.append(str(ROOT_FOLDER_LOCATION))
+
 import logging
 import pandas as pd
 
@@ -9,17 +10,16 @@ def transform_campaign_metadata(
     df: pd.DataFrame
 ) -> pd.DataFrame:
     """
-    Transform campaign insights of Google Ads
+    Transform Google Ads campaign metadata
     ---------
     Workflow:
         1. Validate required columns
         2. Parse campaign naming convention
-        3. Enrich platform & date dimensions
-        4. Return transformed DataFrame
+        3. Enrich platform dimension
     ---------
     Returns:
         1. DataFrame:
-            Campaign metadata ready for ingestion
+            Enforced campaign metadata  
     """
 
     msg = (
@@ -30,7 +30,7 @@ def transform_campaign_metadata(
     logging.info(msg)
 
     if df.empty:
-        msg = "⚠️ [TRANSFORM] Empty campaign metadata then transformation will be skipped."
+        msg = "⚠️ [TRANSFORM] Empty campaign metadata then transformation will be suspended."
         print(msg)
         logging.warning(msg)
         return df
