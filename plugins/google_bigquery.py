@@ -1,22 +1,19 @@
-import os
 import sys
+from pathlib import Path
+ROOT_FOLDER_LOCATION = Path(__file__).resolve().parents[2]
+sys.path.append(str(ROOT_FOLDER_LOCATION))
+
 import logging
-import uuid
 import pandas as pd
+import uuid
+
 from google.api_core.exceptions import NotFound
 from google.cloud import bigquery
-sys.path.append(
-    os.path.abspath(
-        os.path.join(
-            os.path.dirname(__file__), "../../"
-            )
-        )
-    )
 
-class GoogleBigqueryLoader:
+class internalGoogleBigqueryLoader:
     """
-    Google BigQuery Loader
-    ----------------------
+    Internal Google BigQuery Loader
+    ---------
     Workflow:
         1. Initialize BigQuery client
         2. Check dataset existence
@@ -24,14 +21,16 @@ class GoogleBigqueryLoader:
         4. Check table existence
         5. Create table if not exist
         6. Apply INSERT/UPSERT DML
-        7. Append data into table
+        7. Writer data into table
+    ---------
+    Returns:
+        None
     """
 
 # 1.1. Initialize
     def __init__(self) -> None:
         self.client: bigquery.Client | None = None
         self.project: str | None = None
-
 
 # 1.2. Loader
     def load(
@@ -77,7 +76,7 @@ class GoogleBigqueryLoader:
 
 # 1.3. Workflow
 
-    # 1.3.1. Initialize Google BigQuery client
+    # 1.3.1. Initialize client
     def _init_client(
             self, 
             direction: str
@@ -178,7 +177,7 @@ class GoogleBigqueryLoader:
                 f"{str(e)}."
             )
 
-    # 1.3.4. Infer DataFrame schema for Google BigQuery table
+    # 1.3.4. Infer DataFrame schema
     @staticmethod
     def _infer_table_schema(df: pd.DataFrame) -> list[bigquery.SchemaField]:
         schema = []
