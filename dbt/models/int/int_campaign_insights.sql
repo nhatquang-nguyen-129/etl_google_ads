@@ -7,7 +7,14 @@ select
     i.campaign_id,
 
     m.campaign_name,
-    m.campaign_status,
+
+    case
+        when m.campaign_status = 'ENABLED' then '🟢'
+        when m.campaign_status = 'PAUSED'  then '⚪'
+        when m.campaign_status = 'REMOVED' then '🔴'
+        else '❓'
+    end as campaign_status,
+
     m.platform,
     m.objective,
     m.budget_group,
