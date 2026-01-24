@@ -4,7 +4,7 @@
 
 This pipeline integrates **Google Ads Insights data**, supporting both **daily synchronization** and **historical backfills**, and serves as the foundation for performance analysis, budget reconciliation, and marketing reporting.
 
-The system is designed with a **modular, stage-based architecture** to ensure maintainability, scalability and controlled evolution over time.
+The system is designed with a **modular, stage-based architecture** to ensure maintainability, scalability, and controlled evolution over time.
 
 ---
 
