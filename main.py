@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 import sys
 ROOT_FOLDER_LOCATION = Path(__file__).resolve().parents[0]
@@ -7,6 +6,7 @@ sys.path.append(str(ROOT_FOLDER_LOCATION))
 from datetime import datetime, timedelta
 import json
 import logging
+import os
 from zoneinfo import ZoneInfo
 
 from google.ads.googleads.client import GoogleAdsClient
@@ -32,21 +32,21 @@ if not all([
 
 def main():
     """
-    Google Ads entrypoint
+    Main Google Ads entrypoint
     ---------
-    Main is responsible for preparing the entire execution environment:
-        - Resolve execution time window from MODE
-        - Read & validate OS environment variables
-        - Load secrets from GCP Secret Manager
-        - Initialize Google Ads client exactly once
-        - Dispatch execution to DAG orchestrator
-
-    DAGs must NOT initialize clients or read secrets.
-    DAGs only coordinate execution order and retries.
+    Workflow
+        1. Resolve execution time window from MODE
+        2. Read & validate OS environment variables
+        3. Load secrets from GCP Secret Manager
+        4. Initialize global Google Ads client
+        5. Dispatch execution to DAG orchestrator
+    ---------
+    Returns:
+        None
     """
     
     msg = (
-        "🔄 [MAIN] Triggering to update Google Ads for "
+        "🔄 [MAIN] Triggering to execute Google Ads main entrypoint for "
         f"{ACCOUNT} account of "
         f"{DEPARTMENT} department in "
         f"{COMPANY} company with "
@@ -81,7 +81,9 @@ def main():
         end_date = last_month_end.strftime("%Y-%m-%d")
 
     else:
-        raise ValueError(f"⚠️ [MAIN] Failed  Unsupported MODE='{MODE}'")
+        raise ValueError(
+            "❌ [MAIN] Failed to execute Google Ads main entrypoint due to unsupported mode "
+            f"{MODE}.")
     
     msg = (
         "✅ [MAIN] Successfully resolved "
@@ -110,7 +112,7 @@ def main():
     
     except Exception as e:
         raise RuntimeError(
-            "❌ [MAIN] Failed to initialize Google Secret Manager client due to."
+            "❌ [MAIN] Failed to initialize Google Secret Manager client due to "
             f"{e}."
         )
         
@@ -218,10 +220,9 @@ def main():
         raise RuntimeError(
             "❌ [MAIN] Failed to initialize global Google Ads client due to."
             f"{e}."
-        )
-   
+        )  
 
-# Execute DAGS
+# Execute DAGs
     dags_google_ads(
         google_ads_client=google_ads_client,
         customer_id=google_customer_id,
