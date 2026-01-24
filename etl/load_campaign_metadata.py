@@ -19,14 +19,16 @@ def load_campaign_metadata(
     Workflow:
         1. Validate input DataFrame
         2. Validate output direction for Google BigQuery
-        3. Make internalGoogleBigQueryLoader API call
+        3. Set primary key(s) to customer_id and campaign_id
+        4. Use UPSERT mode with temporary table for deduplication
+        5. Make internalGoogleBigQueryLoader API call
     ---------
     Returns:
         None
     """      
 
     if df.empty:
-        msg = ("⚠️ [LOADER] Empty Google Ads campaign metadata Dataframe then loading will be skipped.")
+        msg = ("⚠️ [LOADER] Empty Google Ads campaign metadata Dataframe then loading will be suspended.")
         print(msg)
         logging.warning(msg)
         return
