@@ -15,9 +15,7 @@ def transform_campaign_insights(
     Workflow:
         1. Validate required columns
         2. Normalize date dimensions
-        3. Parse campaign naming convention
-        4. Enrich platform dimension
-        5. Return transformed DataFrame
+        3. Enforce metrics' schema
     ---------
     Returns:
         1. DataFrame:
