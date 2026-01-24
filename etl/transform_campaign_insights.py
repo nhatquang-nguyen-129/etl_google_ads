@@ -2,6 +2,7 @@ import sys
 from pathlib import Path
 ROOT_FOLDER_LOCATION = Path(__file__).resolve().parents[2]
 sys.path.append(str(ROOT_FOLDER_LOCATION))
+
 import logging
 import pandas as pd
 
@@ -9,7 +10,7 @@ def transform_campaign_insights(
     df: pd.DataFrame
 ) -> pd.DataFrame:
     """
-    Transform campaign insights of Google Ads
+    Transform Google Ads campaign insights
     ---------
     Workflow:
         1. Validate required columns
@@ -20,7 +21,7 @@ def transform_campaign_insights(
     ---------
     Returns:
         1. DataFrame:
-            Campaign insights fact table ready for analytics & BigQuery ingestion
+            Enforced campaign insights    
     """
 
     msg = (
@@ -31,7 +32,7 @@ def transform_campaign_insights(
     logging.info(msg)
 
     if df.empty:
-        msg = "⚠️ [TRANSFORM] Empty campaign insights then transformation will be skipped."
+        msg = "⚠️ [TRANSFORM] Empty campaign insights then transformation will be suspended."
         print(msg)
         logging.warning(msg)
         return df
