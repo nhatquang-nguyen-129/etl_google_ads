@@ -1,0 +1,29 @@
+# Byte-compiled/optimized/DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Virtual environments files
+.env
+.venv
+env/
+venv/
+ENV/
+
+# pip-tools generated files
+requirements/*.txt
+
+# Google Ads OAuth desktop client secret
+auth/oauth2_desktop_client.json
+
+# dbt artifacts
+dbt/target/
+dbt/logs/
+dbt/dbt_packages/
+dbt/user.yml
+dbt/.user.yml
+.dbt/user.yml
+.dbt/.user.yml

@@ -1,175 +1,238 @@
-"""
-==================================================================
-MAIN ENTRYPOINT FOR PLATFORM-AGNOSTIC DATA UPDATES
-------------------------------------------------------------------
-This script serves as the unified CLI **controller** for triggering  
-ads data updates across multiple platforms (e.g., Facebook, Google),  
-based on command-line arguments and environment variables.
-
-It supports **incremental daily ingestion** for selected data layers  
-(e.g., campaign, ad) and allows flexible control over date ranges.
-
-✔️ Dynamic routing to the correct update module based on PLATFORM  
-✔️ CLI flags to select data layers and date range mode  
-✔️ Shared logging and error handling across update jobs  
-✔️ Supports scheduled jobs or manual on-demand executions  
-
-⚠️ This script does *not* contain data processing logic itself.  
-It simply delegates update tasks to platform-specific modules  
-(e.g., services.facebook.update, services.budget.update).
-==================================================================
-"""
-# Add project root to sys.path to enable absolute imports
-import os
+from pathlib import Path
 import sys
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
+ROOT_FOLDER_LOCATION = Path(__file__).resolve().parents[0]
+sys.path.append(str(ROOT_FOLDER_LOCATION))
 
-# Add argparse to parse comman-line arguments
-import argparse
-
-# Add dynamic platform-specific modules
-import importlib
-
-# Import datetime to calculate time
 from datetime import datetime, timedelta
-
-# Add logging capability for tracking process execution and errors
+import json
 import logging
+import os
+from zoneinfo import ZoneInfo
 
-# Get environment variable for Company
-COMPANY = os.getenv("COMPANY") 
+from google.ads.googleads.client import GoogleAdsClient
+from google.cloud import secretmanager
+from google.api_core.client_options import ClientOptions
 
-# Get environment variable for Google Cloud Project ID
+from dags.dags_google_ads import dags_google_ads
+
+COMPANY = os.getenv("COMPANY")
 PROJECT = os.getenv("PROJECT")
-
-# Get environment variable for Platform
-PLATFORM = os.getenv("PLATFORM")
-
-# Get environmetn variable for Department
 DEPARTMENT = os.getenv("DEPARTMENT")
-
-# Get environment variable for Account
 ACCOUNT = os.getenv("ACCOUNT")
-
-# Get nvironment variable for Layer
-LAYER = os.getenv("LAYER")
-
-# Get environment variable for Mode
 MODE = os.getenv("MODE")
 
-# Get validated environment variables
-if not all([COMPANY, PLATFORM, ACCOUNT, LAYER, MODE]):
-    raise EnvironmentError("❌ [MAIN] Missing required environment variables COMPANY/PLATFORM/ACCOUNT/LAYER/MODE.")
+if not all([
+    COMPANY,
+    PROJECT,
+    DEPARTMENT,
+    ACCOUNT,
+    MODE
+]):
+    raise EnvironmentError("❌ [MAIN] Failed to execute Google Ads main entrypoint due to missing required environment variables.")
 
-# 1. DYNAMIC IMPORT MODULE BASED ON PLATFORM
-try:
-    update_module = importlib.import_module(f"services.{PLATFORM}.update")
-except ModuleNotFoundError:
-    raise ImportError(f"❌ [MAIN] Platform '{PLATFORM}' is not supported so please ensure services/{PLATFORM}/update.py exists.")
-
-# 1.2. Main entrypoint function
 def main():
-    today = datetime.today()
+    """
+    Main Google Ads entrypoint
+    ---------
+    Workflow
+        1. Resolve execution time window from MODE
+        2. Read & validate OS environment variables
+        3. Load secrets from GCP Secret Manager
+        4. Initialize global Google Ads client
+        5. Dispatch execution to DAGs orchestrator
+    ---------
+    Returns:
+        None
+    """
+    
+    msg = (
+        "🔄 [MAIN] Triggering to execute Google Ads main entrypoint for "
+        f"{ACCOUNT} account of "
+        f"{DEPARTMENT} department in "
+        f"{COMPANY} company with "
+        f"{MODE} mode to Google Cloud project "
+        f"{PROJECT}..."
+    )
+    print(msg)
+    logging.info(msg)    
 
-    # 1.2.1. PLATFORM = facebook (keep original logic)
-    if PLATFORM == "google":
-        try:
-            update_campaign_insights = update_module.update_campaign_insights
-            update_ad_insights = update_module.update_ad_insights
-        except AttributeError:
-            raise ImportError(f"❌ [MAIN] Facebook update module must define update_campaign_insights and update_ad_insights.")
-        layers = [layer.strip() for layer in LAYER.split(",") if layer.strip()]
-        if len(layers) != 1:
-            raise ValueError("⚠️ [MAIN] Only one layer is supported per execution so please run separately for each layer.")
-        if MODE == "today":
-            start_date = end_date = today.strftime("%Y-%m-%d")
-        elif MODE == "last3days":
-            start = today - timedelta(days=3)
-            start_date = start.strftime("%Y-%m-%d")
-            end_date = today.strftime("%Y-%m-%d")
-        elif MODE == "last7days":
-            start = today - timedelta(days=7)
-            start_date = start.strftime("%Y-%m-%d")
-            end_date = today.strftime("%Y-%m-%d")
-        elif MODE == "thismonth":
-            start = today.replace(day=1)
-            start_date = start.strftime("%Y-%m-%d")
-            end_date = today.strftime("%Y-%m-%d")
-        elif MODE == "lastmonth":
-            first_day_this_month = today.replace(day=1)
-            last_day_last_month = first_day_this_month - timedelta(days=1)
-            first_day_last_month = last_day_last_month.replace(day=1)
-            start_date = first_day_last_month.strftime("%Y-%m-%d")
-            end_date = last_day_last_month.strftime("%Y-%m-%d")
-        else:
-            raise ValueError(f"⚠️ [MAIN] Unsupported mode {MODE} so please re-check input environment variable.")
-        if "campaign" in layers:
-            print(f"🚀 [MAIN] Starting to update {PLATFORM} campaign insights of {COMPANY} in {MODE} mode and {layers} layer from {start_date} to {end_date}...")
-            logging.info(f"🚀 [MAIN] Starting to update {PLATFORM} campaign insights of {COMPANY} in {MODE} mode and {layers} layer from {start_date} to {end_date}...")
-            update_campaign_insights(start_date=start_date, end_date=end_date)
-            print(f"✅ [MAIN] Successfully completed update {PLATFORM} campaign insights of {COMPANY} in {MODE} mode and {layers} layer from {start_date} to {end_date}.")
-            logging.info(f"✅ [MAIN] Successfully completed update {PLATFORM} campaign insights of {COMPANY} in {MODE} mode and {layers} layer from {start_date} to {end_date}.")
-        if "ad" in layers:
-            print(f"🚀 [MAIN] Starting to update {PLATFORM} ad insights of {COMPANY} in {MODE} mode and {layers} layer from {start_date} to {end_date}...")
-            logging.info(f"🚀 [MAIN] Starting to update {PLATFORM} ad insights of {COMPANY} in {MODE} mode and {layers} layer from {start_date} to {end_date}...")
-            update_ad_insights(start_date=start_date, end_date=end_date)
-            print(f"✅ [MAIN] Successfully completed update {PLATFORM} ad insights of {COMPANY} in {MODE} mode and {layers} layer from {start_date} to {end_date}.")
-            logging.info(f"✅ [MAIN] Successfully completed update {PLATFORM} ad insights of {COMPANY} in {MODE} mode and {layers} layer from {start_date} to {end_date}.")
+# Resolve input time range
+    ICT = ZoneInfo("Asia/Ho_Chi_Minh")
+    today = datetime.now(ICT)
+    
+    if MODE == "today":
+        start_date = end_date = today.strftime("%Y-%m-%d")
 
-    # 1.2.2. PLATFORM = budget
-    elif PLATFORM == "budget":
-        try:
-            update_budget_allocation = update_module.update_budget_allocation
-        except AttributeError:
-            raise ImportError(f"❌ [MAIN] Budget update module must define 'update_budget_allocation'.")
-        if MODE == "thismonth":
-            thang = today.strftime("%Y-%m")   # e.g. "2025-08"
-        elif MODE == "lastmonth":
-            first_day_this_month = today.replace(day=1)
-            last_day_last_month = first_day_this_month - timedelta(days=1)
-            thang = last_day_last_month.strftime("%Y-%m")   # e.g. "2025-07"
-        else:
-            raise ValueError(f"⚠️ [MAIN] Unsupported mode {MODE} for budget. Use thismonth or lastmonth.")
-        if LAYER != "all":
-            raise ValueError("⚠️ [MAIN] Budget only supports LAYER=all.")
-        print(f"🚀 [MAIN] Starting to update budget allocation of {COMPANY} for {thang}...")
-        logging.info(f"🚀 [MAIN] Starting to update budget allocation of {COMPANY} for {thang}...")
-        update_budget_allocation(thang)
-        print(f"✅ [MAIN] Successfully completed update budget allocation of {COMPANY} for {thang}.")
-        logging.info(f"✅ [MAIN] Successfully completed update budget allocation of {COMPANY} for {thang}.")
+    elif MODE == "last3days":
+        start_date = (today - timedelta(days=3)).strftime("%Y-%m-%d")
+        end_date = (today - timedelta(days=1)).strftime("%Y-%m-%d")
 
-     # 1.2.3. PLATFORM = ads
-    elif PLATFORM == "ads":
-        try:
-            update_spend = update_module.update_spend_all
-            update_recon = update_module.update_recon_all
-        except AttributeError:
-            raise ImportError(f"❌ [MAIN] Ads update module must define 'mart_spend_all' and 'mart_recon_all'.")
-        layers = [layer.strip() for layer in LAYER.split(",") if layer.strip()]
-        if len(layers) != 1:
-            raise ValueError("⚠️ [MAIN] Ads only supports one LAYER per execution (spend or recon).")
-        if MODE != "all":
-            raise ValueError("⚠️ [MAIN] Ads only supports MODE=all.")
-        layer = layers[0]
-        if layer == "spend":
-            print(f"🚀 [MAIN] Starting to build unified ads spend mart for {COMPANY}...")
-            logging.info(f"🚀 [MAIN] Starting to build unified ads spend mart for {COMPANY}...")
-            update_spend()
-            print(f"✅ [MAIN] Successfully built unified ads spend mart for {COMPANY}.")
-            logging.info(f"✅ [MAIN] Successfully built unified ads spend mart for {COMPANY}.")
-        elif layer == "recon":
-            print(f"🚀 [MAIN] Starting to build unified ads spend reconciliation mart for {COMPANY}...")
-            logging.info(f"🚀 [MAIN] Starting to build unified ads spend reconciliation mart for {COMPANY}...")
-            update_recon()
-            print(f"✅ [MAIN] Successfully built unified ads spend reconciliation mart for {COMPANY}.")
-            logging.info(f"✅ [MAIN] Successfully built unified ads spend reconciliation mart for {COMPANY}.")
-        else:
-            raise ValueError(f"⚠️ [MAIN] Unsupported ads LAYER={layer}. Use spend or recon.")
+    elif MODE == "last7days":
+        start_date = (today - timedelta(days=7)).strftime("%Y-%m-%d")
+        end_date = (today - timedelta(days=1)).strftime("%Y-%m-%d")
 
-# 1.3. Entrypoint guard to run main() when this script is executed directly
+    elif MODE == "thismonth":
+        start_date = today.replace(day=1).strftime("%Y-%m-%d")
+        end_date = today.strftime("%Y-%m-%d")
+
+    elif MODE == "lastmonth":
+        last_month_end = today.replace(day=1) - timedelta(days=1)
+        start_date = last_month_end.replace(day=1).strftime("%Y-%m-%d")
+        end_date = last_month_end.strftime("%Y-%m-%d")
+
+    else:
+        raise ValueError(
+            "❌ [MAIN] Failed to execute Google Ads main entrypoint due to unsupported mode "
+            f"{MODE}.")
+    
+    msg = (
+        "✅ [MAIN] Successfully resolved "
+        f"{MODE} mode to date range from "
+        f"{start_date} to "
+        f"{end_date}."
+    )
+    print(msg)
+    logging.info(msg)
+
+# Initialize Google Secret Manager
+    try:
+        msg = ("🔍 [MAIN] Initialize Google Secret Manager client...")
+        print(msg)
+        logging.info(msg)
+        
+        google_secret_client = secretmanager.SecretManagerServiceClient(
+            client_options=ClientOptions(
+                api_endpoint="secretmanager.googleapis.com"
+            )
+        )
+
+        msg = ("✅ [MAIN] Successfully initialized Google Secret Manager client.")
+        print(msg)
+        logging.info(msg)
+    
+    except Exception as e:
+        raise RuntimeError(
+            "❌ [MAIN] Failed to initialize Google Secret Manager client due to "
+            f"{e}."
+        )
+        
+# Resolve customer_id from Google Secret Manager
+    try:
+        secret_customer_id = (
+            f"{COMPANY}_secret_{DEPARTMENT}_google_account_id_{ACCOUNT}"
+        )
+        secret_customer_name = (
+            f"projects/{PROJECT}/secrets/{secret_customer_id}/versions/latest"
+        )
+        
+        msg = (
+            "🔍 [MAIN] Retrieving Google Ads secret_customer_id "
+            f"{secret_customer_id} from Google Secret Manager..."
+        )
+        print(msg)
+        logging.info(msg)        
+
+        secret_customer_response = google_secret_client.access_secret_version(
+            name=secret_customer_name,
+            timeout=10.0, #DEBUG
+        )
+        google_customer_id = (
+            secret_customer_response.payload.data.decode("utf-8")
+            .replace("-", "")
+            .replace(" ", "")
+            .strip()
+        )
+        
+        msg = (
+            "✅ [MAIN] Successfully retrieved Google Ads customer_id "
+            f"{google_customer_id} from Google Secret Manager."
+        )
+        print(msg)
+        logging.info(msg)
+    
+    except Exception as e:
+        raise RuntimeError(
+            "❌ [MAIN] Failed to retrieve Google Ads customer_id from Google Secret Manager due to "
+            f"{e}."
+        )
+
+    try:
+        secret_credentials_json = (
+            f"{COMPANY}_secret_all_google_token_access_user"
+        )
+        secret_credentials_name = (
+            f"projects/{PROJECT}/secrets/{secret_credentials_json}/versions/latest"
+        )
+        
+        msg = (
+            "🔍 [MAIN] Retrieving Google Ads secret_credentials_json "
+            f"{secret_credentials_json} from Google Secret Manager..."
+        )
+        print(msg)
+        logging.info(msg)
+
+        secret_credentials_response = google_secret_client.access_secret_version(
+            name=secret_credentials_name
+        )
+        google_ads_credentials = json.loads(
+            secret_credentials_response.payload.data.decode("UTF-8")
+        )
+        
+        msg = ("✅ [MAIN] Successfully retrieved Google Ads credentials from Google Secret Manager.")
+        print(msg)
+        logging.info(msg)
+    
+    except Exception as e:
+        raise RuntimeError(
+            "❌ [MAIN] Failed to retrieve Google Ads credentials from Google Secret Manager due to "
+            f"{e}."
+        )        
+
+# Initialize global Google Ads client
+    google_ads_config = {
+        "developer_token": google_ads_credentials["developer_token"],
+        "client_id": google_ads_credentials["client_id"],
+        "client_secret": google_ads_credentials["client_secret"],
+        "refresh_token": google_ads_credentials["refresh_token"],
+        "login_customer_id": google_ads_credentials["login_customer_id"],
+        "use_proto_plus": True,
+    }
+    try:
+        msg = (
+            "🔍 [MAIN] Initializing global Google Ads client for customer_id "
+            f"{google_customer_id}..."
+        )
+        print(msg)
+        logging.info(msg)
+
+        google_ads_client = GoogleAdsClient.load_from_dict(
+            google_ads_config
+        )
+
+        msg = (
+            "✅ [MAIN] Successfully initialized global Google Ads client for customer_id "
+            f"{google_customer_id}."
+        )
+        print(msg)
+        logging.info(msg)
+    
+    except Exception as e:
+        raise RuntimeError(
+            "❌ [MAIN] Failed to initialize global Google Ads client due to."
+            f"{e}."
+        )  
+
+# Execute DAGs
+    dags_google_ads(
+        google_ads_client=google_ads_client,
+        customer_id=google_customer_id,
+        start_date=start_date,
+        end_date=end_date
+    )
+
+# Entrypoint
 if __name__ == "__main__":
     try:
         main()
-    except Exception as e:
-        logging.error(f"❌ Update failed: {e}")
+    except Exception:
         sys.exit(1)
