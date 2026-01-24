@@ -2,22 +2,22 @@ import sys
 from pathlib import Path
 ROOT_FOLDER_LOCATION = Path(__file__).resolve().parents[0]
 sys.path.append(str(ROOT_FOLDER_LOCATION))
-import subprocess
-import os
+
 import logging
+import os
+import subprocess
 
 def dbt_google_ads(
     *,
     google_cloud_project: str,
 ):
     """
-    Run dbt Models for Google Ads Mart
+    Run dbt for Google Ads
     ---------
     Workflow:
-        1. Initialize dbt execution environment (directory, profiles, target)
+        1. Initialize dbt execution environment
         2. Trigger dbt build command for Google Ads models
         3. Capture dbt execution logs with stdout and stderr
-        4. Raise exception if dbt execution fails
     ---------
     Returns:
         1. subprocess.CompletedProcess:
@@ -63,7 +63,7 @@ def dbt_google_ads(
         print(e.stderr)
         logging.error(e.stderr)       
         raise RuntimeError(
-            "❌ [DBT] Failed to complete dbt build for Google Ads to Google Cloud Project"
+            "❌ [DBT] Failed to complete dbt build for Google Ads to Google Cloud Project "
             f"{google_cloud_project} due to "
             f"{e}."
         )
