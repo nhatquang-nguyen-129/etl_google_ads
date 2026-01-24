@@ -5,7 +5,6 @@ sys.path.append(str(ROOT_FOLDER_LOCATION))
 import logging
 from typing import List
 import pandas as pd
-from google.ads.googleads.client import GoogleAdsClient
 from google.ads.googleads.errors import GoogleAdsException
 
 def extract_campaign_metadata(
@@ -14,13 +13,14 @@ def extract_campaign_metadata(
     campaign_id_list: List[str],
 ) -> pd.DataFrame:
     """
-    Extract Campaign Metadata from Google Ads
+    Extract Google Ads campaign metadata
     ---------
     Workflow:
-        1. Initialize Google Ads client using provided credentials
-        2. Execute GAQL query to fetch campaign-level attributes
-        3. Normalize API response into tabular structure
-        4. Return extracted metadata
+        1. Initialize Google Ads client
+        2. Execute GAQL query for campaign metadata
+        3. Stream using search_stream API
+        4. Return extracted data
+        5. Enforce List[dict] to DataFrame
     ---------
     Returns:
         1. DataFrame:

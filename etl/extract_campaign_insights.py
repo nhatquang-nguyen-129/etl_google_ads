@@ -26,7 +26,7 @@ def extract_campaign_insights(
     ---------
     Returns:
         1. DataFrame:
-            Flattened campaign insight records suitable for analytics pipelines
+            Flattened campaign insight records
     """
 
     _QUERY_CAMPAIGN_INSIGHTS = f"""
