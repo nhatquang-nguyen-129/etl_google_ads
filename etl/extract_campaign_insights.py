@@ -15,13 +15,14 @@ def extract_campaign_insights(
     end_date: str
 ) -> pd.DataFrame:
     """
-    Extract Campaign Insights from Google Ads
+    Extract Google Ads campaign insights
     ---------
     Workflow:
-        1. Initialize Google Ads client using provided credentials
+        1. Initialize Google Ads client
         2. Execute GAQL query for campaign insights
-        3. Stream using search_stream API for large datasets
+        3. Stream using search_stream API
         4. Return extracted data
+        5. Enforce List[dict] to DataFrame
     ---------
     Returns:
         1. DataFrame:
