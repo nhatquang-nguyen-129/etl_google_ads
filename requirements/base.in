@@ -20,5 +20,9 @@ google-cloud-bigquery-storage
 google-cloud-secret-manager
 google-cloud-storage
 
+# dbt core
+dbt-core
+dbt-bigquery
+
 # Serialization / utils
 orjson
