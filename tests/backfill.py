@@ -1,6 +1,6 @@
 from pathlib import Path
 import sys
-ROOT_FOLDER_LOCATION = Path(__file__).resolve().parents[0]
+ROOT_FOLDER_LOCATION = Path(__file__).resolve().parents[1]
 sys.path.append(str(ROOT_FOLDER_LOCATION))
 
 from datetime import datetime
