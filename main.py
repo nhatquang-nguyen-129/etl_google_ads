@@ -156,6 +156,7 @@ def main():
             f"{e}."
         )
 
+# Resolve JSON credentials from Google Secret Manager
     try:
         secret_credentials_json = (
             f"{COMPANY}_secret_all_google_token_access_user"
