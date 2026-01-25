@@ -44,12 +44,12 @@ def main():
 # CLI arguments parser for manual date range
     parser = argparse.ArgumentParser(description="Manual Google Ads ETL runner")
     parser.add_argument(
-        "--start-date",
+        "--start_date",
         required=True,
         help="Start date in YYYY-MM-DD format"
     )
     parser.add_argument(
-        "--end-date",
+        "--end_date",
         required=True,
         help="End date in YYYY-MM-DD format"
     )
