@@ -19,5 +19,13 @@ select
     clicks,
     cost,
     conversions,
-    conversion_value
+    conversion_value,
+    platform,
+    objective,
+    budget_group,
+    region,
+    category_level_1,
+    track_group,
+    pillar_group,
+    content_group
 from {{ ref('int_campaign_insights') }}
