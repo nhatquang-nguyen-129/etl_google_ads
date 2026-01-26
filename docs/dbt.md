@@ -8,7 +8,7 @@
 - name: dbt project identifier used as namespace for model configuration and must match the top-level folder under models
 - version: Used for tracking breaking changes in mart schema
 - config-version: dbt config schema version required for scoped model configs
-- profile: Defines BigQuery project/dataset/authentication method
+- profile: Defines Google BigQuery project/dataset/authentication method
 - model-paths: ["models"] contains SQL models only
 - macro-paths: ["macros"] contains SQL helper macros only
 
