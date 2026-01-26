@@ -1,37 +1,45 @@
-# dbt — Google Ads Analytics Mart
+# dbt — Project Configuration (dbt_project.yml)
 
-## Purpose
-
-- Use **dbt** to build analytics-ready **mart tables** in **BigQuery**
-- Join **fact Google Ads campaign insights** with:
-  - campaign metadata
-  - campaign creative
-- dbt is used **only for SQL transformations**
-- All extraction, enrichment, and normalization are handled **upstream in ETL**
 
 ---
 
-## What dbt Does
+## dbt_project.yml
 
-- Join fact and dimension tables
-- Define final analytical grain
-- Build mart tables for BI/analytics
-- Manage model dependencies using `ref()`
-
----
-
-## What dbt Does NOT Do
-
-- Extract data from APIs
-- Enrich or clean raw data
-- Perform complex business logic
-- Orchestrate pipelines or schedules
-- Replace ETL validation logic
+- name: dbt project identifier used as namespace for model configuration and must match the top-level folder under models
+- version: Used for tracking breaking changes in mart schema
+- config-version: dbt config schema version required for scoped model configs
+- profile: Defines BigQuery project/dataset/authentication method
+- model-paths: ["models"] contains SQL models only
+- macro-paths: ["macros"] contains SQL helper macros only
 
 ---
 
-## Data Flow
+## stg
+- Staging models: Not materialized
+```bash
+stg:
+  +materialized: ephemeral
+```
+---
 
-- Load prepared tables via ETL
-- Use dbt to join and reshape data
-- Output analytics-ready marts
+## int
+- Intermediate models: Not materialized
+```bash
+int:
+  +materialized: ephemeral
+```
+
+---
+
+## mart
+- Mart models: Persisted as physical tables in BigQuery
+```bash
+mart:
+  +materialized: table
+  +tags: ["mart"]
+
+```
+- Tagged for selective execution:
+```bash
+dbt run --select tag:mart
+```
