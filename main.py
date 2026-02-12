@@ -1,15 +1,13 @@
-from pathlib import Path
+import os
 import sys
+from pathlib import Path
 ROOT_FOLDER_LOCATION = Path(__file__).resolve().parents[0]
 sys.path.append(str(ROOT_FOLDER_LOCATION))
 
 from datetime import datetime, timedelta
 import json
-import logging
-import os
 from zoneinfo import ZoneInfo
 
-from google.ads.googleads.client import GoogleAdsClient
 from google.cloud import secretmanager
 from google.api_core.client_options import ClientOptions
 
@@ -45,16 +43,14 @@ def main():
         None
     """
     
-    msg = (
+    print(
         "🔄 [MAIN] Triggering to execute Google Ads main entrypoint for "
         f"{ACCOUNT} account of "
         f"{DEPARTMENT} department in "
         f"{COMPANY} company with "
         f"{MODE} mode to Google Cloud project "
         f"{PROJECT}..."
-    )
-    print(msg)
-    logging.info(msg)    
+    ) 
 
 # Resolve input time range
     ICT = ZoneInfo("Asia/Ho_Chi_Minh")
@@ -85,20 +81,16 @@ def main():
             "❌ [MAIN] Failed to execute Google Ads main entrypoint due to unsupported mode "
             f"{MODE}.")
     
-    msg = (
+    print(
         "✅ [MAIN] Successfully resolved "
         f"{MODE} mode to date range from "
         f"{start_date} to "
         f"{end_date}."
     )
-    print(msg)
-    logging.info(msg)
 
 # Initialize Google Secret Manager
     try:
-        msg = ("🔍 [MAIN] Initialize Google Secret Manager client...")
-        print(msg)
-        logging.info(msg)
+        print("🔍 [MAIN] Initialize Google Secret Manager client...")
         
         google_secret_client = secretmanager.SecretManagerServiceClient(
             client_options=ClientOptions(
@@ -106,9 +98,7 @@ def main():
             )
         )
 
-        msg = ("✅ [MAIN] Successfully initialized Google Secret Manager client.")
-        print(msg)
-        logging.info(msg)
+        print("✅ [MAIN] Successfully initialized Google Secret Manager client.")
     
     except Exception as e:
         raise RuntimeError(
@@ -117,24 +107,22 @@ def main():
         )
         
 # Resolve customer_id from Google Secret Manager
+    secret_customer_id = (
+        f"{COMPANY}_secret_{DEPARTMENT}_google_account_id_{ACCOUNT}"
+    )
+    secret_customer_name = (
+        f"projects/{PROJECT}/secrets/{secret_customer_id}/versions/latest"
+    )
+    
     try:
-        secret_customer_id = (
-            f"{COMPANY}_secret_{DEPARTMENT}_google_account_id_{ACCOUNT}"
-        )
-        secret_customer_name = (
-            f"projects/{PROJECT}/secrets/{secret_customer_id}/versions/latest"
-        )
-        
-        msg = (
+        print(
             "🔍 [MAIN] Retrieving Google Ads secret_customer_id "
             f"{secret_customer_id} from Google Secret Manager..."
-        )
-        print(msg)
-        logging.info(msg)        
+        )       
 
         secret_customer_response = google_secret_client.access_secret_version(
             name=secret_customer_name,
-            timeout=10.0, #DEBUG
+            timeout=10.0,
         )
         google_customer_id = (
             secret_customer_response.payload.data.decode("utf-8")
@@ -143,12 +131,10 @@ def main():
             .strip()
         )
         
-        msg = (
+        print(
             "✅ [MAIN] Successfully retrieved Google Ads customer_id "
             f"{google_customer_id} from Google Secret Manager."
         )
-        print(msg)
-        logging.info(msg)
     
     except Exception as e:
         raise RuntimeError(
@@ -157,20 +143,18 @@ def main():
         )
 
 # Resolve JSON credentials from Google Secret Manager
-    try:
-        secret_credentials_json = (
-            f"{COMPANY}_secret_all_google_token_access_user"
-        )
-        secret_credentials_name = (
-            f"projects/{PROJECT}/secrets/{secret_credentials_json}/versions/latest"
-        )
-        
-        msg = (
+    secret_credentials_json = (
+        f"{COMPANY}_secret_all_google_token_access_user"
+    )
+    secret_credentials_name = (
+        f"projects/{PROJECT}/secrets/{secret_credentials_json}/versions/latest"
+    )
+
+    try:       
+        print(
             "🔍 [MAIN] Retrieving Google Ads secret_credentials_json "
             f"{secret_credentials_json} from Google Secret Manager..."
         )
-        print(msg)
-        logging.info(msg)
 
         secret_credentials_response = google_secret_client.access_secret_version(
             name=secret_credentials_name
@@ -179,9 +163,7 @@ def main():
             secret_credentials_response.payload.data.decode("UTF-8")
         )
         
-        msg = ("✅ [MAIN] Successfully retrieved Google Ads credentials from Google Secret Manager.")
-        print(msg)
-        logging.info(msg)
+        print("✅ [MAIN] Successfully retrieved Google Ads credentials from Google Secret Manager.")
     
     except Exception as e:
         raise RuntimeError(
