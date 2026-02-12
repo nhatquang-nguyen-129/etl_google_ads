@@ -24,7 +24,7 @@ MODE = os.getenv("MODE")
 
 def dags_google_ads(
     *,
-    google_ads_client,
+    google_ads_credentials: dict,
     customer_id: str,
     start_date: str,
     end_date: str,
@@ -62,7 +62,7 @@ def dags_google_ads(
 
     # Extract               
                 insights = extract_campaign_insights(
-                    google_ads_client=google_ads_client,
+                    google_ads_credentials=google_ads_credentials,
                     customer_id=customer_id,
                     start_date=dags_split_date,
                     end_date=dags_split_date,
@@ -178,7 +178,7 @@ def dags_google_ads(
 
     # Extract
     df_campaign_metadatas = extract_campaign_metadata(
-        google_ads_client=google_ads_client,
+        google_ads_credentials=google_ads_credentials,
         customer_id=customer_id,
         campaign_id_list=list(total_campaign_ids),
     )

@@ -1,0 +1,172 @@
+import os
+import sys
+from pathlib import Path
+ROOT_FOLDER_LOCATION = Path(__file__).resolve().parents[0]
+sys.path.append(str(ROOT_FOLDER_LOCATION))
+
+import argparse
+from datetime import datetime
+import json
+
+from google.cloud import secretmanager
+from google.api_core.client_options import ClientOptions
+
+from dags.dags_google_ads import dags_google_ads
+
+COMPANY = os.getenv("COMPANY")
+PROJECT = os.getenv("PROJECT")
+DEPARTMENT = os.getenv("DEPARTMENT")
+ACCOUNT = os.getenv("ACCOUNT")
+
+if not all([
+    COMPANY,
+    PROJECT,
+    DEPARTMENT,
+    ACCOUNT,
+]):
+    raise EnvironmentError("❌ [BACKFILL] Failed to execute Google Ads main entrypoint due to missing required environment variables.")
+
+def backfill():
+    """
+    Backfill Google Ads entrypoint
+    ---------
+    Workflow:
+        1. Get execution time window through argparse
+        2. Validate OS environment variables
+        3. Load secrets from GCP Secret Manager
+        4. Resolve advertiser_id and access_token
+        5. Dispatch execution to DAG orchestrator
+    Return:
+        None
+    """
+
+# CLI arguments parser for manual date range
+    parser = argparse.ArgumentParser(description="Manual Google Ads ETL executor")
+    parser.add_argument(
+        "--start_date",
+        required=True,
+        help="Start date in YYYY-MM-DD format"
+    )
+    parser.add_argument(
+        "--end_date",
+        required=True,
+        help="End date in YYYY-MM-DD format"
+    )
+    args = parser.parse_args()
+
+    try:
+        start_date = datetime.strptime(args.start_date, "%Y-%m-%d").strftime("%Y-%m-%d")
+        end_date = datetime.strptime(args.end_date, "%Y-%m-%d").strftime("%Y-%m-%d")
+    except ValueError:
+        raise ValueError("❌ [BACKFILL] Failed to execute Google Ads main entrypoint due to start_date and end_date must be in YYYY-MM-DD format.")
+
+    if start_date > end_date:
+        raise ValueError("❌ [BACKFILL] Failed to execute Google Ads main entrypoint due to start_date must be less than or equal to end_date.")
+
+    print(
+        "🔄 [BACKFILL] Triggering to execute Google Ads main entrypoint for "
+        f"{ACCOUNT} account of "
+        f"{DEPARTMENT} department in "
+        f"{COMPANY} company from "
+        f"{start_date} to "
+        f"{end_date} on Google Cloud Project "
+        f"{PROJECT}..."
+    )
+
+# Initialize Google Secret Manager
+    try:
+        print("🔍 [BACKFILL] Initialize Google Secret Manager client...")
+        
+        google_secret_client = secretmanager.SecretManagerServiceClient(
+            client_options=ClientOptions(
+                api_endpoint="secretmanager.googleapis.com"
+            )
+        )
+
+        print("✅ [BACKFILL] Successfully initialized Google Secret Manager client.")
+    
+    except Exception as e:
+        raise RuntimeError(
+            "❌ [BACKFILL] Failed to initialize Google Secret Manager client due to "
+            f"{e}."
+        )
+        
+# Resolve customer_id from Google Secret Manager
+    secret_customer_id = (
+        f"{COMPANY}_secret_{DEPARTMENT}_google_account_id_{ACCOUNT}"
+    )
+    secret_customer_name = (
+        f"projects/{PROJECT}/secrets/{secret_customer_id}/versions/latest"
+    )
+    
+    try:
+        print(
+            "🔍 [BACKFILL] Retrieving Google Ads secret_customer_id "
+            f"{secret_customer_id} from Google Secret Manager..."
+        )       
+
+        secret_customer_response = google_secret_client.access_secret_version(
+            name=secret_customer_name,
+            timeout=10.0,
+        )
+        google_customer_id = (
+            secret_customer_response.payload.data.decode("utf-8")
+            .replace("-", "")
+            .replace(" ", "")
+            .strip()
+        )
+        
+        print(
+            "✅ [BACKFILL] Successfully retrieved Google Ads customer_id "
+            f"{google_customer_id} from Google Secret Manager."
+        )
+    
+    except Exception as e:
+        raise RuntimeError(
+            "❌ [BACKFILL] Failed to retrieve Google Ads customer_id from Google Secret Manager due to "
+            f"{e}."
+        )
+
+# Resolve JSON credentials from Google Secret Manager
+    secret_credentials_json = (
+        f"{COMPANY}_secret_all_google_token_access_user"
+    )
+    secret_credentials_name = (
+        f"projects/{PROJECT}/secrets/{secret_credentials_json}/versions/latest"
+    )
+
+    try:       
+        print(
+            "🔍 [BACKFILL] Retrieving Google Ads secret_credentials_json "
+            f"{secret_credentials_json} from Google Secret Manager..."
+        )
+
+        secret_credentials_response = google_secret_client.access_secret_version(
+            name=secret_credentials_name
+        )
+        google_ads_credentials = json.loads(
+            secret_credentials_response.payload.data.decode("UTF-8")
+        )
+        
+        print("✅ [BACKFILL] Successfully retrieved Google Ads credentials from Google Secret Manager.")
+    
+    except Exception as e:
+        raise RuntimeError(
+            "❌ [BACKFILL] Failed to retrieve Google Ads credentials from Google Secret Manager due to "
+            f"{e}."
+        )        
+
+# Execute DAGs
+    dags_google_ads(
+        google_ads_credentials==google_ads_credentials,
+        customer_id=google_customer_id,
+        start_date=start_date,
+        end_date=end_date
+    )
+
+# Entrypoint
+if __name__ == "__main__":
+    try:
+        backfill()
+    except Exception:
+        sys.exit(1)
