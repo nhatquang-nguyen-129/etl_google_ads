@@ -189,43 +189,9 @@ def main():
             f"{e}."
         )        
 
-# Initialize global Google Ads client
-    google_ads_config = {
-        "developer_token": google_ads_credentials["developer_token"],
-        "client_id": google_ads_credentials["client_id"],
-        "client_secret": google_ads_credentials["client_secret"],
-        "refresh_token": google_ads_credentials["refresh_token"],
-        "login_customer_id": google_ads_credentials["login_customer_id"],
-        "use_proto_plus": True,
-    }
-    try:
-        msg = (
-            "🔍 [MAIN] Initializing global Google Ads client for customer_id "
-            f"{google_customer_id}..."
-        )
-        print(msg)
-        logging.info(msg)
-
-        google_ads_client = GoogleAdsClient.load_from_dict(
-            google_ads_config
-        )
-
-        msg = (
-            "✅ [MAIN] Successfully initialized global Google Ads client for customer_id "
-            f"{google_customer_id}."
-        )
-        print(msg)
-        logging.info(msg)
-    
-    except Exception as e:
-        raise RuntimeError(
-            "❌ [MAIN] Failed to initialize global Google Ads client due to."
-            f"{e}."
-        )  
-
 # Execute DAGs
     dags_google_ads(
-        google_ads_client=google_ads_client,
+        google_ads_credentials==google_ads_credentials,
         customer_id=google_customer_id,
         start_date=start_date,
         end_date=end_date
