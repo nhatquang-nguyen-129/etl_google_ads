@@ -26,7 +26,7 @@ select
 
     i.impressions,
     i.clicks,
-    i.cost,
+    i.spend,
     i.conversions,
     i.conversion_value
 

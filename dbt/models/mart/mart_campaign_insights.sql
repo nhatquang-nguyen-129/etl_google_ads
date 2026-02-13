@@ -17,7 +17,7 @@ select
     campaign_status,
     impressions,
     clicks,
-    cost,
+    spend,
     conversions,
     conversion_value,
     platform,

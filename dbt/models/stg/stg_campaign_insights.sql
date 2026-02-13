@@ -32,7 +32,7 @@
         cast(null as date)    as date,
         cast(null as int64)   as impressions,
         cast(null as int64)   as clicks,
-        cast(null as numeric) as cost,
+        cast(null as numeric) as spend,
         cast(null as int64)   as conversions,
         cast(null as numeric) as conversion_value
     where false
@@ -47,7 +47,7 @@ select
     date,
     impressions,
     clicks,
-    cost,
+    spend,
     conversions,
     conversion_value
 from `{{ target.project }}.{{ raw_schema }}.{{ table_name }}`
