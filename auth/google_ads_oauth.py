@@ -12,10 +12,10 @@ SCOPES = ["https://www.googleapis.com/auth/adwords"]
 GCP_OAUTH2_CLIENT_SECRET_FILE = Path(__file__).resolve().parent / "oauth2_desktop_client.json"
 
 # Put your Google Ads MCC Developer Token here
-GOOGLE_ADS_MCC_DEVELOPER_TOKEN = "PUT_YOUR_GOOGLE_ADS_MCC_DEVELOPER_TOKEN_HERE"
+GOOGLE_ADS_MCC_DEVELOPER_TOKEN = "PUT-YOUR-GOOGLE-ADS-MCC-DEVELOPER-TOKEN-HERE"
 
 # Put your Google Ads MCC numbers only no dashes customer ID here
-GOOGLE_ADS_MCC_CUSTOMER_ID = "PUT_YOUR_GOOGLE_ADS_MCC_CUSTOMER_ID_HERE"
+GOOGLE_ADS_MCC_CUSTOMER_ID = "PUT-YOUR-GOOGLE-ADS-MCC-CUSTOMER-ID-HERE"
 
 def internal_bootstrap_oauth():
     flow = InstalledAppFlow.from_client_secrets_file(

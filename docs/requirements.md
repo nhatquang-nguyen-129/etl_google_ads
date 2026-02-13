@@ -49,7 +49,7 @@ pip install pip-tools
 
 - Compile `base.in` requirements
 ```bash
-pip-compile requirements/base.in -o requirements/base.txt
+pip-compile requirements/base.in -o requirements/base.txt --strip-extras
 ```
 
 - Install exact libraries version
