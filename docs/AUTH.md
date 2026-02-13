@@ -32,7 +32,7 @@
 ### Run Bootstrap Authentication
 
 - Fill required variables
-```bash
+```text
 GOOGLE_ADS_MCC_DEVELOPER_TOKEN = "PUT_YOUR_GOOGLE_ADS_MCC_DEVELOPER_TOKEN_HERE"
 GOOGLE_ADS_MCC_CUSTOMER_ID = "PUT_YOUR_GOOGLE_ADS_MCC_CUSTOMER_ID_HERE"
 ```
@@ -45,7 +45,7 @@ python google_ads_oauth.py
 - Script opens browser for OAuth consent and example console output below:
 `
 Successfully generated credential payload:
-
+```text
 {
   "developer_token": "AIzaSyD-EXAMPLE-DEVELOPER-TOKEN",
   "client_id": "1234567890-abcdefg.apps.googleusercontent.com",
@@ -53,94 +53,34 @@ Successfully generated credential payload:
   "refresh_token": "1//0gEXAMPLE_REFRESH_TOKEN_LONG_STRING",
   "login_customer_id": "1234567890"
 }
-`
+```
 
-- Copy the credential payload above then Store it securely with Secret Manager
+- Copy the credential payload above then store it securely with Secret Manager
 
 - Use the credential payload to initialize GoogleAdsClient
 
 ## Revoke
 
+### Use cases
 
+- Google Ads will **invalidate refresh token** if access from OAuth Desktop App has been revoked
 
-Token Lifecycle & Revocation Behavior
-Important: Revoking Access Invalidates Refresh Token
+- Google Ads will **invalidate refresh token** if OAuth client ID has been changed or deleted
 
-If you revoke the app from:
+- Google Ads will **invalidate refresh token** if OAuth consent screen has been modified significantly
 
-Google Account → Security → Third-party apps
+- Google Ads will **invalidate refresh token** if Google account password has been reset
 
+- Google Ads will **invalidate refresh token** if this token is unused for 6 months
 
-Google will:
+### Re-run Bootstrap Authentication
 
-Immediately invalidate the refresh token
+- Re-run `google_ads_oauth.py` to get assembled single payload credentials
+```bash
+python google_ads_oauth.py
+```
 
-Invalidate all access tokens derived from that refresh token
-
-Return invalid_grant on the next token exchange attempt
-
-This will break:
-
-Google Ads API client initialization
-
-Any non-interactive production workload
-
-Scheduled pipelines (Airflow / Cron / etc.)
-
-Other Events That Invalidate Refresh Tokens
-
-Refresh tokens may also become invalid if:
-
-OAuth client ID is changed or deleted
-
-OAuth consent screen is modified significantly
-
-Google account password is reset
-
-Token is unused for ~6 months
-
-Account security policy forces re-authentication
-
-When this happens, API calls will fail with:
-
-invalid_grant
-
-Recovery Procedure (If invalid_grant Occurs)
-
-Re-run bootstrap script:
-
-python bootstrap_google_ads_oauth.py
-
-
-Log in again via browser.
-
-Copy the newly generated credential payload.
-
-Update secure storage (Secret Manager / Vault / encrypted file).
-
-Restart affected pipelines.
-
-This bootstrap process must be repeated every time the refresh token is invalidated.
-
-Production Storage Recommendation
-
-The bootstrap script only generates credentials.
-
-It is strongly recommended to:
-
-Store credentials in:
-
-Google Secret Manager
-
-Vault
-
-Encrypted configuration file
-
-Never commit credentials to source control
-
-Never share payload via chat/email
-
-Recommended structure:
+- Script opens browser for OAuth consent and example console output below:
 
 {
   "developer_token": "...",
@@ -150,39 +90,6 @@ Recommended structure:
   "login_customer_id": "..."
 }
 
-Architecture Recommendation (Production)
-Use a Dedicated Automation Account
+- Copy the newly generated credential payload above then update new version with Secret Manager
 
-For production systems:
-
-Create a dedicated Google account for automation
-
-Grant it Google Ads access (read-only if possible)
-
-Use it exclusively for API access
-
-Avoid using personal accounts
-
-This prevents accidental revocation and access disruption.
-
-Security Model Summary
-
-Authentication method: OAuth (Desktop App flow)
-
-Access pattern: Non-interactive via refresh token
-
-Token rotation: Manual (via bootstrap script)
-
-Service Accounts: Not supported by Google Ads API
-
-Production usage: Supported via stored refresh token
-
-Final Notes
-
-The bootstrap script is a one-time setup under normal conditions.
-
-If refresh token is revoked or expires, it must be regenerated.
-
-Proper secret storage is critical for production stability.
-
-Authentication errors are almost always related to refresh token invalidation, not API logic errors.
+- Use the credential payload to initialize GoogleAdsClient
