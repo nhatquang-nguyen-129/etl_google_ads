@@ -13,7 +13,7 @@ def transform_campaign_metadata(
     ---------
     Workflow:
         1. Validate input
-        2. Validate required columns
+        2. Validate required column
         3. Enrich platform column
         4. Normalize date columns
         5. Enforce schema
