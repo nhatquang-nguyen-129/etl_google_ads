@@ -49,7 +49,7 @@ def transform_campaign_insights(
     df["campaign_id"] = df["campaign_id"].astype(str)
     df["impressions"] = df["impressions"].astype("int64")
     df["clicks"] = df["clicks"].astype("int64")
-    df["spend"] = (df["cost"] * 100).round().astype("int64")
+    df["spend"] = df["cost"].round().astype("int64")
     df["conversions"] = df["conversions"].astype("float64")
     df["conversion_value"] = df["conversion_value"].astype("float64")    
     df = df.assign(
