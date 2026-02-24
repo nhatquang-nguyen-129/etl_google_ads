@@ -1,11 +1,13 @@
-# Data Build Tool for Facebook Ads SQL Materialization
+# Data Build Tool for Google Ads
 
 ## Purpose
 
-- Use **dbt** to build Facebook analytics-ready **materialized tables** in **Google BigQuery**
+- Use **dbt** to build Google Ads analytics-ready **materialized tables** in **Google BigQuery**
+
 - Used **dbt** only for **SQL transformations** and all ELT processes are handled upstream
-- Join Facebook Ads campaign insights fact tables with campaign metadata dim table
-- Join Facebook Ads ad insights fact tables with campaign metadata/adset metadata/ad metadata/ad creative dim tables
+
+- Join Google Ads campaign insights fact tables with campaign metadata dim table
+
 - Define final analytical grain and manage model dependencies using `ref()`
 
 ---
@@ -14,9 +16,9 @@
 
 ### Activate Python venv
 
-- Create Python virtual environment if `venv\` folder not exists
+- Create Python virtual environment with Python 3.13 interpreter if `venv\` folder not exists
 ```bash
-python -m venv venv
+& "C:\Users\ADMIN\AppData\Local\Programs\Python\Python313\python.exe" -m venv venv
 ```
 
 - Activate Python virtual environment and check `(venv)` in the terminal
@@ -50,7 +52,7 @@ dbt --version
 ```bash
 {{ config(
     materialized='ephemeral',
-    tags=['stg', 'facebook', 'campaign']
+    tags=['stg', 'campaign']
 ) }}
 ```
 
@@ -58,7 +60,7 @@ dbt --version
 ```bash
 {{ config(
     materialized='ephemeral',
-    tags=['int', 'facebook', 'campaign']
+    tags=['stg', 'campaign']
 ) }}
 ```
 
@@ -66,7 +68,7 @@ dbt --version
 ```bash
 {{ config(
     materialized='table',
-    tags=['mart', 'facebook', 'campaign']
+    tags=['stg', 'campaign']
 ) }}
 ```
 
@@ -94,20 +96,7 @@ dbt compile
 dbt build
 ```
 
-- Run only campaign insights
-```bash
-$env:PROJECT="seer-digital-ads"
-$env:COMPANY="kids"
-$env:DEPARTMENT="marketing"
-$env:ACCOUNT="main"
-
-dbt build `
-  --project-dir dbt `
-  --profiles-dir dbt `
-  --select tag:mart,tag:recon
-```
-
-- Run only ad insights
+- Run only budget reconciliation
 ```bash
 $env:PROJECT="your-gcp-project"
 $env:COMPANY="your-company-in-short"
@@ -117,15 +106,15 @@ $env:ACCOUNT="your-account"
 dbt build `
   --project-dir dbt `
   --profiles-dir dbt `
-  --select tag:ad
+  --select tag:mart
 ```
 
 ### Deployment with DAGs
 
 - Using Python `subprocess` to call dbt for each stream
 ```bash
-dbt_facebook_ads(
+dbt_budget_reconcilie(
     google_cloud_project=PROJECT,
-    select="campaign",
+    select="tag:mart",
 )
 ```
