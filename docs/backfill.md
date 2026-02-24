@@ -1,14 +1,27 @@
-# Test — Backfill for Main Entrypoin
+# Backfill for Google Ads
 
-- Manually fetch historical Google Ads data outside predefined `MODE` window
-- Read required environment variables `COMPANY`, `PROJECT`, `DEPARTMENT`, `ACCOUNT`
-- Accept `start_date` and `end_date` from CLI
-- CLI usage example: 
+## Purpose
 
+- Execute Google Ads DAGs for **historical data** outside of default runtime schedule
+
+- Allow **manual override** of time range instead of relying on `main.py` predefined `MODE` mappings
+
+- Require standard environment variables `COMPANY`, `PROJECT`, `DEPARTMENT`, `ACCOUNT` to be provided
+
+- Primarily designed to run in **local environment** for controlled historical reprocessing
+
+- Accept `start_date` and `end_date` via argparse for flexible time-based backfill execution
+
+## Execution
+
+- Ensure Google Cloud Platform's Application Default Credentials already configured
+
+- Run Backfill for Google Ads campaign insights with specific date range using CLI
 ```bash
-export COMPANY=my_company
-export PROJECT=my_gcp_project
-export DEPARTMENT=marketing
-export ACCOUNT=search
+$env:PROJECT="your-gcp-project"
+$env:COMPANY="your-company-in-short"
+$env:DEPARTMENT="your-department"
+$env:ACCOUNT="your-account"
 
-python backfill.py --start-date 2025-12-30 --end-date 2026-01-01`
+python -m backfill.backfill_google_ads --start_date=2026-01-05 --end_date=2026-01-05
+```

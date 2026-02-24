@@ -1,28 +1,26 @@
-# Python ultities
-python-dateutil
-pytz
-python-dotenv
-requests
-tenacity
+# Python utilities
+pytz; python_version >= "3.9"
 
 # Python libraries
-pandas
-pyarrow
+numpy; python_version >= "3.10"
+pandas; python_version >= "3.10"
+pyarrow; python_version >= "3.10"
+
+# Google Cloud core
+google-auth; python_version >= "3.9"
+google-api-core; python_version >= "3.9"
+
+# Google BigQuery
+google-cloud-bigquery; python_version >= "3.9"
+google-cloud-bigquery-storage; python_version >= "3.9"
+google-cloud-secret-manager; python_version >= "3.9"
+pandas-gbq; python_version >= "3.9"
 
 # Google Ads
 google-ads
 
-# Google Cloud
-google-auth
-google-auth-oauthlib
-google-cloud-bigquery
-google-cloud-bigquery-storage
-google-cloud-secret-manager
-google-cloud-storage
+# dbt adapter
+dbt-bigquery; python_version >= "3.9"
 
-# dbt core
-dbt-core
-dbt-bigquery
-
-# Serialization / utils
+# Serialization
 orjson

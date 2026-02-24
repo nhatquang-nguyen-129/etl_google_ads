@@ -3,15 +3,15 @@ from pathlib import Path
 ROOT_FOLDER_LOCATION = Path(__file__).resolve().parents[2]
 sys.path.append(str(ROOT_FOLDER_LOCATION))
 
-import logging
 from typing import List
 import pandas as pd
 
+from google.ads.googleads.client import GoogleAdsClient
 from google.ads.googleads.errors import GoogleAdsException
 
 def extract_campaign_insights(
     *,
-    google_ads_client,
+    google_ads_credentials: dict,
     customer_id: str,
     start_date: str,
     end_date: str
@@ -31,6 +31,37 @@ def extract_campaign_insights(
             Flattened campaign insight records
     """
 
+# Initialize Google Ads client
+    google_ads_config = {
+        "developer_token": google_ads_credentials["developer_token"],
+        "client_id": google_ads_credentials["client_id"],
+        "client_secret": google_ads_credentials["client_secret"],
+        "refresh_token": google_ads_credentials["refresh_token"],
+        "login_customer_id": google_ads_credentials["login_customer_id"],
+        "use_proto_plus": True,
+    }
+
+    try:
+        print(
+            "🔍 [EXTRACT] Initializing Google Ads client for customer_id "
+            f"{customer_id}..."
+        )
+        
+        google_ads_client = GoogleAdsClient.load_from_dict(
+            google_ads_config
+        )
+
+        print(
+            "✅ [EXTRACT] Successfully initialized Google Ads client."
+        )
+    
+    except Exception as e:
+        raise RuntimeError(
+            "❌ [EXTRACT] Failed to initialize Google Ads client due to "
+            f"{e}."
+        ) from e
+
+# Make Google Ads API call for campaign insights
     _QUERY_CAMPAIGN_INSIGHTS = f"""
         SELECT
             segments.date,
@@ -46,25 +77,21 @@ def extract_campaign_insights(
         WHERE segments.date BETWEEN '{start_date}' AND '{end_date}'
     """
 
-    msg = (
-        "🔍 [EXTRACT] Extracting Google Ads campaign insights for customer_id "
-        f"{customer_id} from start_date "
-        f"{start_date} to end_date "
-        f"{end_date}..."
-    )
-    print(msg)
-    logging.info(msg)
-
-    google_ads_service = google_ads_client.get_service("GoogleAdsService")
-    request = google_ads_client.get_type("SearchGoogleAdsStreamRequest")
-
-    request.customer_id = customer_id
-    request.query = _QUERY_CAMPAIGN_INSIGHTS
-
     rows: List[dict] = []
     batch_count = 0
 
     try:
+        print(
+            "🔍 [EXTRACT] Extracting Google Ads campaign insights for customer_id "
+            f"{customer_id} from start_date "
+            f"{start_date} to end_date "
+            f"{end_date}..."
+        )       
+
+        google_ads_service = google_ads_client.get_service("GoogleAdsService")
+        request = google_ads_client.get_type("SearchGoogleAdsStreamRequest")
+        request.customer_id = customer_id
+        request.query = _QUERY_CAMPAIGN_INSIGHTS        
         stream = google_ads_service.search_stream(request=request)
 
         for batch in stream:
@@ -74,8 +101,6 @@ def extract_campaign_insights(
                     "date": row.segments.date,
                     "customer_id": row.customer.id,
                     "campaign_id": row.campaign.id,
-                    "campaign_name": row.campaign.name,
-                    "campaign_status": row.campaign.status.name,
                     "channel_type": row.campaign.advertising_channel_type.name,
                     "impressions": row.metrics.impressions,
                     "clicks": row.metrics.clicks,
@@ -86,38 +111,87 @@ def extract_campaign_insights(
 
         df = pd.DataFrame(rows)
 
-        msg = (
+        print(
             "✅ [EXTRACT] Successfully extracted "
-            f"{len(df)} row(s) with {batch_count} batch(es)."
+            f"{len(df)} row(s) of Google Ads campaign insights with "
+            f"{batch_count} batch(es)."
         )
-        print(msg)
-        logging.info(msg)
 
         return df
 
     except GoogleAdsException as e:
-        for error in e.failure.errors:
-            error_code = error.error_code
-            if (
-                error_code.internal_error
-                or error_code.resource_exhausted
-                or error_code.server_error
-                or error_code.timeout_error
-            ):
-                
-                retryable = True
-                raise RuntimeError(
-                    "❌ [EXTRACT] Failed to extract Google Ads campaign insights for customer_id " 
-                    f"{customer_id} from "
-                    f"{start_date} to "
-                    f"{end_date} due to API error."
-                ) from e
 
-        retryable = False
-        raise ValueError(
-            "❌ [EXTRACT] Failed to extract Google Ads campaign insights for customer_id" 
+        error_codes = [
+            failure.error_code for failure in e.failure.errors
+        ]
+
+        # Unexpected retryable API error
+        if any(
+            failure.error_code.internal_error
+            or failure.error_code.resource_exhausted
+            or failure.error_code.server_error
+            or failure.error_code.timeout_error
+            for failure in e.failure.errors
+        ):
+            error = RuntimeError(
+                "⚠️ [EXTRACT] Failed to extract Google Ads campaign insights for customer_id "
+                f"{customer_id} from "
+                f"{start_date} to "
+                f"{end_date} due to "
+                f"{error_codes} then this request is eligible to retry."
+            )
+            error.retryable = True
+            raise error from e
+
+        # Unexpected non-retryable API error
+        if any(
+            failure.error_code.authentication_error
+            or failure.error_code.authorization_error
+            or failure.error_code.request_error
+            or failure.error_code.field_error
+            or failure.error_code.policy_finding_error
+            for failure in e.failure.errors
+        ):
+            error = RuntimeError(
+                "❌ [EXTRACT] Failed to extract Google Ads campaign insights for customer_id "
+                f"{customer_id} from "
+                f"{start_date} to "
+                f"{end_date} due to "
+                f"{error_codes} then this request is not eligible to retry."
+            )
+            error.retryable = False
+            raise error from e
+
+    # Unexpected retryable request timeout error
+    except TimeoutError as e:
+        error = RuntimeError(
+            "⚠️ [EXTRACT] Failed to extract Google Ads campaign insights for customer_id "
             f"{customer_id} from "
-            f"{start_date} to "  
+            f"{start_date} to "
+            f"{end_date} due to request timeout error then this request is eligible to retry."
+        )
+        error.retryable = True
+        raise error from e
+
+    # Unexpected retryable request connection error
+    except ConnectionError as e:
+        error = RuntimeError(
+            "⚠️ [EXTRACT] Failed to extract Google Ads campaign insights for customer_id "
+            f"{customer_id} from "
+            f"{start_date} to "
+            f"{end_date} due to request connection error then this request is eligible to retry."
+        )
+        error.retryable = True
+        raise error from e
+
+    # Unknown non-retryable error
+    except Exception as e:
+        error = RuntimeError(
+            "❌ [EXTRACT] Failed to extract Google Ads campaign insights for customer_id "
+            f"{customer_id} from "
+            f"{start_date} to "
             f"{end_date} due to "
             f"{e}."
-        ) from e
+        )
+        error.retryable = False
+        raise error from e

@@ -3,14 +3,14 @@ from pathlib import Path
 ROOT_FOLDER_LOCATION = Path(__file__).resolve().parents[2]
 sys.path.append(str(ROOT_FOLDER_LOCATION))
 
-import logging
 from typing import List
 import pandas as pd
 
+from google.ads.googleads.client import GoogleAdsClient
 from google.ads.googleads.errors import GoogleAdsException
 
 def extract_campaign_metadata(
-    google_ads_client,
+    google_ads_credentials: dict,
     customer_id: str,
     campaign_id_list: List[str],
 ) -> pd.DataFrame:
@@ -29,17 +29,47 @@ def extract_campaign_metadata(
             Flattened campaign metadata records
     """
 
+# Validate input
     if not campaign_id_list:
-        msg = (
+        print(
             "⚠️ [EXTRACT] No Google Ads campaign id found for customer_id "
             f"{customer_id} then extraction will be suspended."
         )
-        print(msg)
-        logging.info(msg)
         return pd.DataFrame()
-    
-    campaign_ids_str = ", ".join(str(cid) for cid in campaign_id_list)
 
+# Initialize Google Ads client
+    google_ads_config = {
+        "developer_token": google_ads_credentials["developer_token"],
+        "client_id": google_ads_credentials["client_id"],
+        "client_secret": google_ads_credentials["client_secret"],
+        "refresh_token": google_ads_credentials["refresh_token"],
+        "login_customer_id": google_ads_credentials["login_customer_id"],
+        "use_proto_plus": True,
+    }
+
+    try:
+        print(
+            "🔍 [EXTRACT] Initializing Google Ads client for customer_id "
+            f"{customer_id}..."
+        )
+        
+        google_ads_client = GoogleAdsClient.load_from_dict(
+            google_ads_config
+        )
+
+        print("✅ [EXTRACT] Successfully initialized Google Ads client.")
+    
+    except Exception as e:
+        raise RuntimeError(
+            "❌ [EXTRACT] Failed to initialize Google Ads client due to "
+            f"{e}."
+        ) from e
+
+# Make Google Ads API call for campaign metadata
+    rows: List[dict] = [] 
+    
+    campaign_ids_str = ", ".join(str(cid) for cid in campaign_id_list)    
+    
     _QUERY_CAMPAIGN_METADATA = f"""
         SELECT
             campaign.id,
@@ -51,19 +81,14 @@ def extract_campaign_metadata(
         WHERE campaign.id IN ({campaign_ids_str})
     """
 
-    msg = (
-        "🔍 [EXTRACT] Extracting Google Ads campaign metadata for customer_id "
-        f"{customer_id} with "
-        f"{len(campaign_id_list)} campaign_id(s)..."
-    )
-    print(msg)
-    logging.info(msg)
-
-    google_ads_service = google_ads_client.get_service("GoogleAdsService")
-
-    rows: List[dict] = []
-
     try:        
+        print(
+            "🔍 [EXTRACT] Extracting Google Ads campaign metadata for customer_id "
+            f"{customer_id} with "
+            f"{len(campaign_id_list)} campaign_id(s)..."
+        )
+        
+        google_ads_service = google_ads_client.get_service("GoogleAdsService")        
         response = google_ads_service.search(
             customer_id=customer_id,
             query=_QUERY_CAMPAIGN_METADATA,
@@ -84,24 +109,73 @@ def extract_campaign_metadata(
         return df
 
     except GoogleAdsException as e:
-        for error in e.failure.errors:
-            error_code = error.error_code
 
-            if (
-                error_code.internal_error
-                or error_code.resource_exhausted
-                or error_code.server_error
-                or error_code.timeout_error
-            ):
-                retryable = True
-                raise RuntimeError(
-                    "❌ [EXTRACT] Failed to extract Google Ads campaign metadata for customer_id "
-                    f"{customer_id} due to retryable API error."
-                ) from e
+        error_codes = [
+            failure.error_code for failure in e.failure.errors
+        ]
 
-        retryable = False
-        raise ValueError(
+        # Unexpected retryable API error
+        if any(
+            failure.error_code.internal_error
+            or failure.error_code.resource_exhausted
+            or failure.error_code.server_error
+            or failure.error_code.timeout_error
+            for failure in e.failure.errors
+        ):
+            error = RuntimeError(
+                "⚠️ [EXTRACT] Failed to extract Google Ads campaign metadata for customer_id "
+                f"{customer_id} with "
+                f"{len(campaign_id_list)} campaign_id(s) due to "
+                f"{error_codes} then this request is eligible to retry."
+            )
+            error.retryable = True
+            raise error from e
+
+        # Unexpected non-retryable API error
+        if any(
+            failure.error_code.authentication_error
+            or failure.error_code.authorization_error
+            or failure.error_code.request_error
+            or failure.error_code.field_error
+            or failure.error_code.policy_finding_error
+            for failure in e.failure.errors
+        ):
+            error = RuntimeError(
+                "❌ [EXTRACT] Failed to extract Google Ads campaign metadata for customer_id "
+                f"{customer_id} with "
+                f"{len(campaign_id_list)} campaign_id(s) due to "
+                f"{error_codes} then this request is not eligible to retry."
+            )
+            error.retryable = False
+            raise error from e
+
+    # Unexpected retryable request timeout error
+    except TimeoutError as e:
+        error = RuntimeError(
+            "⚠️ [EXTRACT] Failed to extract Google Ads campaign metadata for customer_id "
+            f"{customer_id} with "
+            f"{len(campaign_id_list)} campaign_id(s) due to request timeout error then this request is eligible to retry."
+        )
+        error.retryable = True
+        raise error from e
+
+    # Unexpected retryable request connection error
+    except ConnectionError as e:
+        error = RuntimeError(
+            "⚠️ [EXTRACT] Failed to extract Google Ads campaign metadata for customer_id "
+            f"{customer_id} with "
+            f"{len(campaign_id_list)} campaign_id(s) due to request connection error then this request is eligible to retry."
+        )
+        error.retryable = True
+        raise error from e
+
+    # Unknown non-retryable error
+    except Exception as e:
+        error = RuntimeError(
             "❌ [EXTRACT] Failed to extract Google Ads campaign metadata for customer_id "
-            f"{customer_id} due to non-retryable error: "
+            f"{customer_id} with "
+            f"{len(campaign_id_list)} campaign_id(s) due to "
             f"{e}."
-        ) from e
+        )
+        error.retryable = False
+        raise error from e

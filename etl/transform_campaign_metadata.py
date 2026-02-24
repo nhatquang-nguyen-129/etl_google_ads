@@ -3,36 +3,33 @@ from pathlib import Path
 ROOT_FOLDER_LOCATION = Path(__file__).resolve().parents[2]
 sys.path.append(str(ROOT_FOLDER_LOCATION))
 
-import logging
 import pandas as pd
 
 def transform_campaign_metadata(
     df: pd.DataFrame
 ) -> pd.DataFrame:
     """
-    Transform Google Ads campaign metadata
+    Transform Budget Allocation
     ---------
     Workflow:
-        1. Validate required columns
-        2. Parse campaign naming convention
-        3. Enrich platform dimension
+        1. Validate input
+        2. Validate required column
+        3. Enrich platform column
+        4. Normalize date columns
+        5. Enforce schema
     ---------
     Returns:
         1. DataFrame:
-            Enforced campaign metadata  
+            Enforced budget allocation records
     """
 
-    msg = (
+    print(
         "🔄 [TRANSFORM] Transforming "
         f"{len(df)} row(s) of Google Ads campaign metadata..."
     )
-    print(msg)
-    logging.info(msg)
 
     if df.empty:
-        msg = "⚠️ [TRANSFORM] Empty campaign metadata then transformation will be suspended."
-        print(msg)
-        logging.warning(msg)
+        print("⚠️ [TRANSFORM] Empty campaign metadata then transformation will be suspended.")
         return df
 
     required_cols = {
@@ -52,20 +49,19 @@ def transform_campaign_metadata(
     df["platform"] = "Google"
     df = df.assign(
         objective=df["campaign_name"].fillna("").str.split("_").str[0].fillna("unknown"),
-        budget_group=df["campaign_name"].fillna("").str.split("_").str[1].fillna("unknown"),
-        region=df["campaign_name"].fillna("").str.split("_").str[2].fillna("unknown"),
-        category_level_1=df["campaign_name"].fillna("").str.split("_").str[3].fillna("unknown"),
-
-        track_group=df["campaign_name"].fillna("").str.split("_").str[6].fillna("unknown"),
-        pillar_group=df["campaign_name"].fillna("").str.split("_").str[7].fillna("unknown"),
-        content_group=df["campaign_name"].fillna("").str.split("_").str[8].fillna("unknown"),
+        region=df["campaign_name"].fillna("").str.split("_").str[1].fillna("unknown"),
+        budget_group_1=df["campaign_name"].fillna("").str.split("_").str[2].fillna("unknown"),
+        budget_group_2=df["campaign_name"].fillna("").str.split("_").str[3].fillna("unknown"),      
+        category_level_1=df["campaign_name"].fillna("").str.split("_").str[4].fillna("unknown"),
+        personnel=df["campaign_name"].fillna("").str.split("_").str[5].fillna("unknown"),
+        track_group=df["campaign_name"].fillna("").str.split("_").str[7].fillna("unknown"),
+        pillar_group=df["campaign_name"].fillna("").str.split("_").str[8].fillna("unknown"),
+        content_group=df["campaign_name"].fillna("").str.split("_").str[9].fillna("unknown"),
     )
-
-    msg = (
+    
+    print(
         "✅ [TRANSFORM] Successfully transformed "
         f"{len(df)} row(s) of Google Ads campaign metadata."
     )
-    print(msg)
-    logging.info(msg)
 
     return df

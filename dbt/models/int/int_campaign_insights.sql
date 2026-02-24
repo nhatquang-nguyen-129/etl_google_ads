@@ -1,7 +1,9 @@
 {{ config(materialized='ephemeral') }}
 
 select
-    date(i.date) as date,
+    date,
+    month,
+    year,
 
     i.customer_id,
     i.campaign_id,
@@ -17,7 +19,8 @@ select
 
     m.platform,
     m.objective,
-    m.budget_group,
+    m.budget_group_1,
+    m.budget_group_2,
     m.region,
     m.category_level_1,
     m.track_group,
@@ -26,7 +29,7 @@ select
 
     i.impressions,
     i.clicks,
-    i.cost,
+    i.spend,
     i.conversions,
     i.conversion_value
 

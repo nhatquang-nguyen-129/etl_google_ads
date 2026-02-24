@@ -1,73 +1,95 @@
-# Google Ads API — Authentication & Credential Bootstrap
+# Google Ads Bootstrap for Authentication
 
 ## Purpose
 
-- Authenticate **Google Ads API** for internal analytics & reporting
-- Generate a long-lived **refresh token** via OAuth
+- Generate a long-lived **refresh token** via **one-time OAuth login** via browser
+
+- Generate a reusable Google Ads credentials payload which only needs to be run only **ONCE**
+
 - Enable **non-interactive** access in production environments
-- Avoid using Service Accounts (not supported by Google Ads API)
+
+- Avoid using Service Accounts which is not supported by Google Ads API
 
 ---
 
-## What This Auth Flow Does
 
-- Perform **one-time OAuth login** via browser
-- Generate Google Ads credentials:
-  - developer token
-  - OAuth client ID & secret
-  - refresh token
-  - login customer ID (MCC)
-- Output a reusable **credential payload**
-- Designed for **read-only analytics workloads**
+## Install
 
----
+### Prerequisites for Bootstrap Authentication
 
-## What This Auth Flow Does NOT Do
+- Google Ads **Developer Token** from Google Ads MCC UI
 
-- Run in production
-- Store secrets automatically (by default)
-- Rotate credentials
-- Handle ETL or data ingestion
-- Replace Google Ads permission management
+- Google Cloud Project with enabled **Google Ads API**
+
+- Google Account with access to Google Ads MCC
+
+- OAuth Client ID from a Google Cloud **Desktop App**
+
+- Downloaded JSON secret client at OAuth2 App creation time 
 
 ---
 
-## Prerequisites
+### Run Bootstrap Authentication
 
-- Google Cloud Project with **Google Ads API enabled**
-- Approved **Developer Token**
-- OAuth Client ID:
-  - Type: **Desktop App**
-  - Client secret JSON downloaded at creation time
-- Google account with access to:
-  - Google Ads account
-  - MCC (if applicable)
+- Fill required variables
+```text
+GOOGLE_ADS_MCC_DEVELOPER_TOKEN = "PUT_YOUR_GOOGLE_ADS_MCC_DEVELOPER_TOKEN_HERE"
+GOOGLE_ADS_MCC_CUSTOMER_ID = "PUT_YOUR_GOOGLE_ADS_MCC_CUSTOMER_ID_HERE"
+```
 
----
-
-## Why OAuth (Not Service Account)
-
-- Google Ads API **does NOT support Service Accounts**
-- All access must be **user-based OAuth**
-- OAuth is safer and more flexible for:
-  - analytics pipelines
-  - reporting jobs
-  - controlled read-only access
-
----
-
-## Bootstrap Flow (Run Once)
-
-### What happens
-
-- Script opens browser for OAuth consent
-- User logs in and approves access
-- Script receives:
-  - access token
-  - refresh token
-- Credentials are assembled into a single payload
-
-### How to run
-
+- Run `google_ads_oauth.py` to get assembled single payload credentials
 ```bash
-python bootstrap_google_ads_oauth.py
+python auth/google_ads_oauth.py
+```
+
+- Script opens browser for OAuth consent and example console output below:
+`
+Successfully generated credential payload:
+```text
+{
+  "developer_token": "AIzaSyD-EXAMPLE-DEVELOPER-TOKEN",
+  "client_id": "1234567890-abcdefg.apps.googleusercontent.com",
+  "client_secret": "GOCSPX-EXAMPLE-CLIENT-SECRET",
+  "refresh_token": "1//0gEXAMPLE_REFRESH_TOKEN_LONG_STRING",
+  "login_customer_id": "1234567890"
+}
+```
+
+- Copy the credential payload above then store it securely with Secret Manager
+
+- Use the credential payload to initialize GoogleAdsClient
+
+## Revoke
+
+### Use cases
+
+- Google Ads will **invalidate refresh token** if access from OAuth Desktop App has been revoked
+
+- Google Ads will **invalidate refresh token** if OAuth client ID has been changed or deleted
+
+- Google Ads will **invalidate refresh token** if OAuth consent screen has been modified significantly
+
+- Google Ads will **invalidate refresh token** if Google account password has been reset
+
+- Google Ads will **invalidate refresh token** if this token is unused for 6 months
+
+### Re-run Bootstrap Authentication
+
+- Re-run `google_ads_oauth.py` to get assembled single payload credentials
+```bash
+python google_ads_oauth.py
+```
+
+- Script opens browser for OAuth consent and example console output below:
+
+{
+  "developer_token": "...",
+  "client_id": "...",
+  "client_secret": "...",
+  "refresh_token": "...",
+  "login_customer_id": "..."
+}
+
+- Copy the newly generated credential payload above then update new version with Secret Manager
+
+- Use the credential payload to initialize GoogleAdsClient

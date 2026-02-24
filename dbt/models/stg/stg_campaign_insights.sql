@@ -29,12 +29,17 @@
     select
         cast(null as string)  as customer_id,
         cast(null as string)  as campaign_id,
-        cast(null as date)    as date,
+
         cast(null as int64)   as impressions,
         cast(null as int64)   as clicks,
-        cast(null as numeric) as cost,
+        cast(null as numeric) as spend,
         cast(null as int64)   as conversions,
-        cast(null as numeric) as conversion_value
+        cast(null as numeric) as conversion_value,
+
+        cast(null as date)    as date,    
+        cast(null as int64)   as year,
+        cast(null as string)  as month
+
     where false
 
 {% else %}
@@ -44,10 +49,12 @@
 select
     customer_id,
     campaign_id,
-    date,
+    DATE(date) as date,
+    month,
+    year,
     impressions,
     clicks,
-    cost,
+    spend,
     conversions,
     conversion_value
 from `{{ target.project }}.{{ raw_schema }}.{{ table_name }}`
