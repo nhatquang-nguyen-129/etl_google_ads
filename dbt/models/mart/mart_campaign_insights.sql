@@ -11,6 +11,9 @@
 
 select
     date,
+    month,
+    year,
+    
     customer_id,
     campaign_id,
     campaign_name,
