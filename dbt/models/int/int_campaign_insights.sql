@@ -17,7 +17,8 @@ select
 
     m.platform,
     m.objective,
-    m.budget_group,
+    m.budget_group_1,
+    m.budget_group_2,
     m.region,
     m.category_level_1,
     m.track_group,
