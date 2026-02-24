@@ -101,8 +101,6 @@ def extract_campaign_insights(
                     "date": row.segments.date,
                     "customer_id": row.customer.id,
                     "campaign_id": row.campaign.id,
-                    "campaign_name": row.campaign.name,
-                    "campaign_status": row.campaign.status.name,
                     "channel_type": row.campaign.advertising_channel_type.name,
                     "impressions": row.metrics.impressions,
                     "clicks": row.metrics.clicks,
