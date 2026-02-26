@@ -1,9 +1,11 @@
-from google_auth_oauthlib.flow import InstalledAppFlow
-import json
-from pathlib import Path
 import sys
+from pathlib import Path
 ROOT_FOLDER_LOCATION = Path(__file__).resolve().parents[1]
 sys.path.append(str(ROOT_FOLDER_LOCATION))
+
+import json
+
+from google_auth_oauthlib.flow import InstalledAppFlow
 
 # Default Google Ads scopes
 SCOPES = ["https://www.googleapis.com/auth/adwords"]
@@ -18,6 +20,22 @@ GOOGLE_ADS_MCC_DEVELOPER_TOKEN = "PUT-YOUR-GOOGLE-ADS-MCC-DEVELOPER-TOKEN-HERE"
 GOOGLE_ADS_MCC_CUSTOMER_ID = "PUT-YOUR-GOOGLE-ADS-MCC-CUSTOMER-ID-HERE"
 
 def internal_bootstrap_oauth():
+    """
+    Google Ads OAuth Bootstrap
+    ---------
+    Principles:
+        1. Initialize OAuth2 flow using Desktop Client Secret configuration
+        2. Request user consent for Google Ads API scope
+        3. Generate offline access credentials with refresh_token
+        4. Construct Google Ads credential payload
+        5. Output secure credential payload
+    ---------
+    Returns:
+        1. dict:
+            Credential payload containing developer_token, client_id,
+            client_secret, refresh_token, and login_customer_id
+    """    
+    
     flow = InstalledAppFlow.from_client_secrets_file(
         GCP_OAUTH2_CLIENT_SECRET_FILE,
         scopes=SCOPES
