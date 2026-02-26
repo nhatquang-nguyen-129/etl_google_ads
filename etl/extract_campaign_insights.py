@@ -19,7 +19,7 @@ def extract_campaign_insights(
     """
     Extract Google Ads campaign insights
     ---------
-    Workflow:
+    Principles:
         1. Initialize Google Ads client
         2. Execute GAQL query for campaign insights
         3. Stream using search_stream API
