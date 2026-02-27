@@ -9,18 +9,18 @@ def transform_campaign_metadata(
     df: pd.DataFrame
 ) -> pd.DataFrame:
     """
-    Transform Budget Allocation
+    Transform Google Ads campaign metadata
     ---------
-    Workflow:
-        1. Validate input
-        2. Validate required column
-        3. Enrich platform column
-        4. Normalize date columns
-        5. Enforce schema
+    Principles:
+        1. Validate input DataFrame
+        2. Validate required identifier columns
+        3. Enrich platform dimension
+        4. Parse structured campaign_name
+        5. Finalize normalized metadata schema
     ---------
     Returns:
         1. DataFrame:
-            Enforced budget allocation records
+            Enforced campaign metadata records
     """
 
     print(

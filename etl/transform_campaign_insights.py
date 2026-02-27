@@ -11,7 +11,7 @@ def transform_campaign_insights(
     """
     Transform Google Ads Campaign Insights
     ---
-    Workflow:
+    Principles:
         1. Validate required schema
         2. Normalize dimension fields
         3. Enforce metric data types
