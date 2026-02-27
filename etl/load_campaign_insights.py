@@ -16,7 +16,7 @@ def load_campaign_insights(
     """
     Load Google Ads campaign insights
     ----------------------
-    Workflow:
+    Principles:
         1. Validate input DataFrame
         2. Validate output direction for Google BigQuery
         3. Set primary key(s) to date
