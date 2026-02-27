@@ -17,7 +17,7 @@ def extract_campaign_metadata(
     """
     Extract Google Ads campaign metadata
     ---------
-    Workflow:
+    Principles:
         1. Initialize Google Ads client
         2. Execute GAQL query for campaign metadata
         3. Stream using search_stream API
