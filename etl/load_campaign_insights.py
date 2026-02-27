@@ -52,4 +52,4 @@ def load_campaign_insights(
         cluster=[
             "campaign_id"
         ],
-    ) 
+    )
