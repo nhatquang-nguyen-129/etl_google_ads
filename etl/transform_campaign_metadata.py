@@ -10,14 +10,14 @@ def transform_campaign_metadata(
 ) -> pd.DataFrame:
     """
     Transform Google Ads campaign metadata
-    ---------
+    ---
     Principles:
         1. Validate input DataFrame
         2. Validate required identifier columns
         3. Enrich platform dimension
         4. Parse structured campaign_name
         5. Finalize normalized metadata schema
-    ---------
+    ---
     Returns:
         1. DataFrame:
             Enforced campaign metadata records
@@ -49,14 +49,12 @@ def transform_campaign_metadata(
     df["platform"] = "Google"
     df = df.assign(
         objective=df["campaign_name"].fillna("").str.split("_").str[0].fillna("unknown"),
-        region=df["campaign_name"].fillna("").str.split("_").str[1].fillna("unknown"),
-        budget_group_1=df["campaign_name"].fillna("").str.split("_").str[2].fillna("unknown"),
-        budget_group_2=df["campaign_name"].fillna("").str.split("_").str[3].fillna("unknown"),      
-        category_level_1=df["campaign_name"].fillna("").str.split("_").str[4].fillna("unknown"),
-        personnel=df["campaign_name"].fillna("").str.split("_").str[5].fillna("unknown"),
-        track_group=df["campaign_name"].fillna("").str.split("_").str[7].fillna("unknown"),
-        pillar_group=df["campaign_name"].fillna("").str.split("_").str[8].fillna("unknown"),
-        content_group=df["campaign_name"].fillna("").str.split("_").str[9].fillna("unknown"),
+        budget_group=df["campaign_name"].fillna("").str.split("_").str[1].fillna("unknown"),
+        region=df["campaign_name"].fillna("").str.split("_").str[2].fillna("unknown"),
+        category_level_1=df["campaign_name"].fillna("").str.split("_").str[3].fillna("unknown"),
+        track=df["campaign_name"].fillna("").str.split("_").str[6].fillna("unknown"),
+        group=df["campaign_name"].fillna("").str.split("_").str[7].fillna("unknown"),
+        content=df["campaign_name"].fillna("").str.split("_").str[8].fillna("unknown"),
     )
     
     print(
