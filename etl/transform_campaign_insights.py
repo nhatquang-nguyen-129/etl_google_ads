@@ -3,36 +3,33 @@ from pathlib import Path
 ROOT_FOLDER_LOCATION = Path(__file__).resolve().parents[2]
 sys.path.append(str(ROOT_FOLDER_LOCATION))
 
-import logging
 import pandas as pd
 
 def transform_campaign_insights(
     df: pd.DataFrame
 ) -> pd.DataFrame:
     """
-    Transform Google Ads campaign insights
-    ---------
+    Transform Google Ads Campaign Insights
+    ---
     Workflow:
-        1. Validate required columns
-        2. Normalize date dimensions
-        3. Enforce metrics' schema
-    ---------
+        1. Validate required schema
+        2. Normalize dimension fields
+        3. Enforce metric data types
+        4. Derive partition columns
+        5. Clean intermediate fields
+    ---
     Returns:
         1. DataFrame:
             Enforced campaign insights    
     """
 
-    msg = (
+    print(
         "🔄 [TRANSFORM] Transforming "
         f"{len(df)} row(s) of Google Ads campaign insights..."
     )
-    print(msg)
-    logging.info(msg)
 
     if df.empty:
-        msg = "⚠️ [TRANSFORM] Empty campaign insights then transformation will be suspended."
-        print(msg)
-        logging.warning(msg)
+        print("⚠️ [TRANSFORM] Empty campaign insights then transformation will be suspended.")
         return df
 
     required_cols = {"date"}
@@ -60,11 +57,9 @@ def transform_campaign_insights(
 
     df = df.drop(columns=["cost"])
 
-    msg = (
+    print(
         "✅ [TRANSFORM] Successfully transformed "
         f"{len(df)} row(s) of Google Ads campaign insights."
     )
-    print(msg)
-    logging.info(msg)
 
     return df
