@@ -8,8 +8,6 @@
 
 - Enable **non-interactive** access in production environments
 
-- Avoid using Service Accounts which is not supported by Google Ads API
-
 ---
 
 
@@ -31,9 +29,13 @@
 
 ### Run Bootstrap Authentication
 
-- Fill required variables
+- Fill required Google Ads MCC Developer Token variable
 ```text
 GOOGLE_ADS_MCC_DEVELOPER_TOKEN = "PUT_YOUR_GOOGLE_ADS_MCC_DEVELOPER_TOKEN_HERE"
+```
+
+- Fill required Google Ads MCC customer ID variable
+```text
 GOOGLE_ADS_MCC_CUSTOMER_ID = "PUT_YOUR_GOOGLE_ADS_MCC_CUSTOMER_ID_HERE"
 ```
 
@@ -43,9 +45,8 @@ python auth/google_ads_oauth.py
 ```
 
 - Script opens browser for OAuth consent and example console output below:
-`
-Successfully generated credential payload:
 ```text
+Successfully generated credential payload:
 {
   "developer_token": "AIzaSyD-EXAMPLE-DEVELOPER-TOKEN",
   "client_id": "1234567890-abcdefg.apps.googleusercontent.com",
@@ -55,9 +56,9 @@ Successfully generated credential payload:
 }
 ```
 
-- Copy the credential payload above then store it securely with Secret Manager
+- Copy the credential payload above then store it securely with `Secret Manager
 
-- Use the credential payload to initialize GoogleAdsClient
+- Use the credential payload to initialize `GoogleAdsClient`
 
 ## Revoke
 
@@ -81,15 +82,17 @@ python google_ads_oauth.py
 ```
 
 - Script opens browser for OAuth consent and example console output below:
-
+```text
+Successfully generated credential payload:
 {
-  "developer_token": "...",
-  "client_id": "...",
-  "client_secret": "...",
-  "refresh_token": "...",
-  "login_customer_id": "..."
+  "developer_token": "AIzaSyD-EXAMPLE-DEVELOPER-TOKEN",
+  "client_id": "1234567890-abcdefg.apps.googleusercontent.com",
+  "client_secret": "GOCSPX-EXAMPLE-CLIENT-SECRET",
+  "refresh_token": "1//0gEXAMPLE_REFRESH_TOKEN_LONG_STRING",
+  "login_customer_id": "1234567890"
 }
+```
 
 - Copy the newly generated credential payload above then update new version with Secret Manager
 
-- Use the credential payload to initialize GoogleAdsClient
+- Use the credential payload to initialize `GoogleAdsClient`
