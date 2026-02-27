@@ -15,7 +15,7 @@ def load_campaign_metadata(
     """
     Load Google Ads campaign metadata
     ----------------------
-    Workflow:
+    Principles:
         1. Validate input DataFrame
         2. Validate output direction for Google BigQuery
         3. Set primary key(s) to customer_id and campaign_id
