@@ -10,7 +10,6 @@
 
 ---
 
-
 ## Install
 
 ### Prerequisites for Bootstrap Authentication
@@ -60,6 +59,8 @@ Successfully generated credential payload:
 
 - Use the credential payload to initialize `GoogleAdsClient`
 
+---
+
 ## Revoke
 
 ### Use cases
@@ -73,6 +74,8 @@ Successfully generated credential payload:
 - Google Ads will **invalidate refresh token** if Google account password has been reset
 
 - Google Ads will **invalidate refresh token** if this token is unused for 6 months
+
+---
 
 ### Re-run Bootstrap Authentication
 
