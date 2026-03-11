@@ -22,14 +22,14 @@ GOOGLE_ADS_MCC_CUSTOMER_ID = "PUT-YOUR-GOOGLE-ADS-MCC-CUSTOMER-ID-HERE"
 def internal_bootstrap_oauth():
     """
     Google Ads OAuth Bootstrap
-    ---------
+    ---
     Principles:
         1. Initialize OAuth2 flow using Desktop Client Secret configuration
         2. Request user consent for Google Ads API scope
         3. Generate offline access credentials with refresh_token
         4. Construct Google Ads credential payload
         5. Output secure credential payload
-    ---------
+    ---
     Returns:
         1. dict:
             Credential payload containing developer_token, client_id,
@@ -79,6 +79,6 @@ def internal_bootstrap_oauth():
 
     return payload
 
-
 if __name__ == "__main__":
+    
     internal_bootstrap_oauth()
