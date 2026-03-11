@@ -1,9 +1,6 @@
 {{ config(materialized='ephemeral') }}
 
 {% set company = var('company') %}
-{% set department = var('department') %}
-{% set account = var('account') %}
-
 {% set raw_schema = company ~ '_dataset_google_api_raw' %}
 {% set table_prefix = company ~ '_table_google_' ~ department ~ '_' ~ account ~ '_campaign_' %}
 
@@ -27,6 +24,9 @@
 {% if table_names | length == 0 %}
 
     select
+        cast(null as string)  as department,
+        cast(null as string)  as account,
+
         cast(null as string)  as customer_id,
         cast(null as string)  as campaign_id,
 
@@ -47,16 +47,22 @@
 {% for table_name in table_names %}
 
 select
-    customer_id,
-    campaign_id,
+    split('{{ table_name }}', '_')[offset(3)] as department,
+    split('{{ table_name }}', '_')[offset(4)] as account,
+    
     DATE(date) as date,
     month,
     year,
+    
+    customer_id,
+    campaign_id,
+
     impressions,
     clicks,
     spend,
     conversions,
     conversion_value
+
 from `{{ target.project }}.{{ raw_schema }}.{{ table_name }}`
 {% if not loop.last %} union all {% endif %}
 
