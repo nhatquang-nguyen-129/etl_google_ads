@@ -1,4 +1,9 @@
-{{ config(materialized='ephemeral') }}
+{{ 
+  config(
+    materialized = 'ephemeral',
+    tags = ['int', 'google', 'campaign']
+  ) 
+}}
 
 select
     date,

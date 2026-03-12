@@ -1,4 +1,9 @@
-{{ config(materialized='ephemeral') }}
+{{ 
+  config(
+    materialized = 'ephemeral',
+    tags = ['stg', 'google', 'campaign']
+  ) 
+}}
 
 {% set company = var('company') %}
 {% set raw_schema = company ~ '_dataset_google_api_raw' %}
