@@ -178,7 +178,7 @@ def extract_campaign_insights(
             
             raise error from e
 
-    # Retryable request timeout error
+        # Retryable request timeout error
     except TimeoutError as e:
         
         error = RuntimeError(
@@ -192,7 +192,7 @@ def extract_campaign_insights(
         
         raise error from e
 
-    # Retryable request connection error
+        # Retryable request connection error
     except ConnectionError as e:
         
         error = RuntimeError(
@@ -206,7 +206,7 @@ def extract_campaign_insights(
         
         raise error from e
 
-    # Unknown non-retryable error
+        # Unknown non-retryable error
     except Exception as e:
         
         error = RuntimeError(
