@@ -192,7 +192,7 @@ def backfill():
 
 # Execute DAGs
     dags_google_ads(
-        google_ads_credentials==google_ads_credentials,
+        google_ads_credentials=google_ads_credentials,
         customer_id=google_customer_id,
         start_date=start_date,
         end_date=end_date
