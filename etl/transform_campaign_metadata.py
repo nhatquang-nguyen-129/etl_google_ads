@@ -12,11 +12,11 @@ def transform_campaign_metadata(
     Transform Google Ads campaign metadata
     ---
     Principles:
-        1. Validate input DataFrame
-        2. Validate required identifier columns
-        3. Enrich platform dimension
-        4. Parse structured campaign_name
-        5. Finalize normalized metadata schema
+        1. Validate input Dataframe
+        2. Validate required schema columns
+        3. Create copy to prevent side effects
+        4. Parse structured naming convention
+        5. Enrich Dataframe
     ---
     Returns:
         1. DataFrame:
@@ -24,12 +24,16 @@ def transform_campaign_metadata(
     """
 
     print(
-        "🔄 [TRANSFORM] Transforming "
-        f"{len(df)} row(s) of Google Ads campaign metadata..."
+        "🔄 [TRANSFORM] Transforming Google Ads campaign metadata with "
+        f"{len(df)} row(s)..."
     )
 
     if df.empty:
-        print("⚠️ [TRANSFORM] Empty campaign metadata then transformation will be suspended.")
+        
+        print(
+            "⚠️ [TRANSFORM] Empty campaign metadata then transformation will be suspended."
+        )
+
         return df
 
     required_cols = {
@@ -39,14 +43,18 @@ def transform_campaign_metadata(
         }
     
     missing = required_cols - set(df.columns)
+
     if missing:
+
         raise ValueError (
             "❌ [TRANSFORM] Faile to transform Google Ads campaign metadata due to missing columns "
             f"{missing} then transformation will be suspended."
         )
 
     df = df.copy()
+
     df["platform"] = "Google"
+
     df = df.assign(
         objective=df["campaign_name"].fillna("").str.split("_").str[0].fillna("unknown"),
         budget_group=df["campaign_name"].fillna("").str.split("_").str[1].fillna("unknown"),
@@ -58,8 +66,8 @@ def transform_campaign_metadata(
     )
     
     print(
-        "✅ [TRANSFORM] Successfully transformed "
-        f"{len(df)} row(s) of Google Ads campaign metadata."
+        "✅ [TRANSFORM] Successfully transformed Google Ads campaign metadata with "
+        f"{len(df)} row(s)."
     )
 
     return df
