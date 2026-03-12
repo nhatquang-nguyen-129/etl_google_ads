@@ -312,4 +312,5 @@ def dags_google_ads(
     
     dbt_google_ads(
         google_cloud_project=PROJECT,
+        select="tag:mart,tag:campaign",
     )
