@@ -29,15 +29,17 @@ def extract_campaign_metadata(
             Flattened campaign metadata records
     """
 
-# Validate input
+    # Validate input
     if not campaign_id_list:
+        
         print(
-            "⚠️ [EXTRACT] No Google Ads campaign id found for customer_id "
+            "⚠️ [EXTRACT] No input campaign_id found for Google Ads customer_id "
             f"{customer_id} then extraction will be suspended."
         )
+        
         return pd.DataFrame()
 
-# Initialize Google Ads client
+    # Initialize Google Ads client
     google_ads_config = {
         "developer_token": google_ads_credentials["developer_token"],
         "client_id": google_ads_credentials["client_id"],
@@ -57,15 +59,18 @@ def extract_campaign_metadata(
             google_ads_config
         )
 
-        print("✅ [EXTRACT] Successfully initialized Google Ads client.")
+        print(
+            "✅ [EXTRACT] Successfully initialized Google Ads client."
+        )
     
     except Exception as e:
+
         raise RuntimeError(
             "❌ [EXTRACT] Failed to initialize Google Ads client due to "
             f"{e}."
         ) from e
 
-# Make Google Ads API call for campaign metadata
+    # Make Google Ads API call for campaign metadata
     rows: List[dict] = [] 
     
     campaign_ids_str = ", ".join(str(cid) for cid in campaign_id_list)    

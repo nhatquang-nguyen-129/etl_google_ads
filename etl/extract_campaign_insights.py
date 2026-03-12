@@ -63,6 +63,10 @@ def extract_campaign_insights(
         ) from e
 
 # Make Google Ads API call for campaign insights
+    rows: List[dict] = []
+    
+    batch_count = 0 
+
     _QUERY_CAMPAIGN_INSIGHTS = f"""
         SELECT
             segments.date,
@@ -77,10 +81,6 @@ def extract_campaign_insights(
         FROM campaign
         WHERE segments.date BETWEEN '{start_date}' AND '{end_date}'
     """
-
-    rows: List[dict] = []
-    
-    batch_count = 0    
     
     try:
         
