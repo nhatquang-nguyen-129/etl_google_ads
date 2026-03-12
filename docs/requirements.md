@@ -1,4 +1,4 @@
-# Dependencies Conflict Management for Budget Reconciliation
+# Dependencies Conflict Management for Google Ads
 
 ## Purpose
 
