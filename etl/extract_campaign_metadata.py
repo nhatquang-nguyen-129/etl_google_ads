@@ -16,14 +16,14 @@ def extract_campaign_metadata(
 ) -> pd.DataFrame:
     """
     Extract Google Ads campaign metadata
-    ---------
+    ---
     Principles:
         1. Initialize Google Ads client
         2. Execute GAQL query for campaign metadata
         3. Stream using search_stream API
         4. Return extracted data
         5. Enforce List[dict] to DataFrame
-    ---------
+    ---
     Returns:
         1. DataFrame:
             Flattened campaign metadata records

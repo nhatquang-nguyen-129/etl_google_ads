@@ -31,26 +31,6 @@ def extract_campaign_insights(
             Flattened campaign insight records
     """
 
-    # Validate input
-    _QUERY_CAMPAIGN_INSIGHTS = f"""
-        SELECT
-            segments.date,
-            customer.id,
-            campaign.id,
-            campaign.advertising_channel_type,
-            metrics.impressions,
-            metrics.clicks,
-            metrics.cost_micros,
-            metrics.conversions,
-            metrics.conversions_value
-        FROM campaign
-        WHERE segments.date BETWEEN '{start_date}' AND '{end_date}'
-    """
-
-    rows: List[dict] = []
-    
-    batch_count = 0
-
     # Initialize Google Ads client
     google_ads_config = {
         "developer_token": google_ads_credentials["developer_token"],
@@ -83,7 +63,27 @@ def extract_campaign_insights(
         ) from e
 
 # Make Google Ads API call for campaign insights
+    _QUERY_CAMPAIGN_INSIGHTS = f"""
+        SELECT
+            segments.date,
+            customer.id,
+            campaign.id,
+            campaign.advertising_channel_type,
+            metrics.impressions,
+            metrics.clicks,
+            metrics.cost_micros,
+            metrics.conversions,
+            metrics.conversions_value
+        FROM campaign
+        WHERE segments.date BETWEEN '{start_date}' AND '{end_date}'
+    """
+
+    rows: List[dict] = []
+    
+    batch_count = 0    
+    
     try:
+        
         print(
             "🔍 [EXTRACT] Extracting Google Ads campaign insights for customer_id "
             f"{customer_id} from start_date "
