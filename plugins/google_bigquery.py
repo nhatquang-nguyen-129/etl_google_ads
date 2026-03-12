@@ -12,14 +12,14 @@ from google.cloud import bigquery
 class internalGoogleBigqueryLoader:
     """
     Internal Google BigQuery Loader
-    ---------
+    ---
     Principles:
         1. Initialize BigQuery client
         2. Check dataset existence
         3. Check table existence
         4. Apply INSERT/UPSERT DML
         5. Writer data into table
-    ---------
+    ---
     Returns:
         None
     """
@@ -124,7 +124,7 @@ class internalGoogleBigqueryLoader:
             print(
                 "🔍 [PLUGIN] Validating Google BigQuery dataset "
                 f"{full_dataset_id} existence..."
-            )
+            ) 
 
             self.client.get_dataset(full_dataset_id)
 
@@ -132,15 +132,15 @@ class internalGoogleBigqueryLoader:
                 "✅ [PLUGIN] Successfully validated Google BigQuery dataset "
                 f"{full_dataset_id} existence."
             )
-            
+
             return True
 
         except NotFound:
             print(
-                "⚠️ [PLUGIN] Google BigQuery dataset "
+                "⚠️ [PLUGIN] Failed to find Google BigQuery dataset "
                 f"{full_dataset_id} not found then dataset creation will be proceeding..."
-            )
-
+            ) 
+            
             return False
 
     # 1.3.3. Create dataset if not exist
@@ -157,7 +157,7 @@ class internalGoogleBigqueryLoader:
             print(
                 "🔍 [PLUGIN] Creating Google BigQuery dataset "
                 f"{full_dataset_id}..."
-            )
+            ) 
 
             dataset_config = bigquery.Dataset(full_dataset_id)
             dataset_config.location = location
@@ -166,7 +166,7 @@ class internalGoogleBigqueryLoader:
             print(
                 "✅ [PLUGIN] Successfully created Google BigQuery dataset "
                 f"{full_dataset_id}."
-            )
+            ) 
 
         except Exception as e:
             raise RuntimeError(
@@ -201,17 +201,17 @@ class internalGoogleBigqueryLoader:
         
         try:
             print(
-                "🔍 [PLUGIN] Validating Google BigQuery table "
-                f"{direction} existence..."
+                "🔍 [PLUGIN] Validating Google BigQuery table " 
+                "f{direction} existence..."
             )
             
             self._init_client(direction)
             self.client.get_table(direction)
             
             print(
-                "✅ [PLUGIN] Successfully validated Google BigQuery table "
+                "✅ [PLUGIN] Successfully validated Google BigQuery table " 
                 f"{direction} existence."
-            )
+            ) 
 
             return True
 
@@ -219,7 +219,7 @@ class internalGoogleBigqueryLoader:
             print(
                 "⚠️ [PLUGIN] Google BigQuery table "
                 f"{direction} not found then table creation will be proceeding..."
-            )
+            ) 
             
             return False
 
@@ -259,8 +259,7 @@ class internalGoogleBigqueryLoader:
             
             print(
                 "✅ [PLUGIN] Successfully created Google BigQuery table "
-                f"{direction}."
-            )
+                f"{direction}.")
         
         except Exception as e:
             raise RuntimeError(
@@ -309,12 +308,15 @@ class internalGoogleBigqueryLoader:
 
             missing = [k for k in keys if k not in df.columns]
             if missing:
-                raise ValueError(f"❌ [PLUGIN] Failed to validate deduplication keys in DataFrame due to {missing} missing key(s).")
+                raise ValueError(
+                    "❌ [PLUGIN] Failed to validate deduplication keys in DataFrame due to "
+                    f"{missing} missing key(s)."
+                )
 
             df_to_delete = df[keys].dropna().drop_duplicates()
             if df_to_delete.empty:
                 print(
-                    f"⚠️ [PLUGIN] Applied UPSERT conflict handling but no keys found in DataFrame then existing records in Google BigQuery table "
+                    "⚠️ [PLUGIN] Applied UPSERT conflict handling but no keys found in DataFrame then existing records in Google BigQuery table "
                     f"{direction} will be skipped."
                 )
                 return
@@ -398,7 +400,7 @@ class internalGoogleBigqueryLoader:
                     f"{key} key to delete."
                     
                 )
-                
+
                 return
 
             # Batch delete using temporary table
@@ -451,7 +453,7 @@ class internalGoogleBigqueryLoader:
                 )
                 return
             
-            msg = (
+            print(
                 "🔍 [PLUGIN] Deleting "
                 f"{existing_count} existing row(s) in Google BigQuery table..."
                 f"{direction}..."
@@ -481,9 +483,9 @@ class internalGoogleBigqueryLoader:
                 
                 try:
                     print(
-                        "🔁 [PLUGIN] Deleting temporary table "
+                        "🔄 [PLUGIN] Deleting temporary table "
                         f"{temp_table}..."
-                    )
+                    )                 
                     
                     self.client.query(f"DROP TABLE `{temp_table}`").result()
                     
