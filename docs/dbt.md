@@ -4,9 +4,11 @@
 
 - Use **dbt** to build Google Ads analytics-ready **materialized tables** in **Google BigQuery**
 
-- Used **dbt** only for **SQL transformations** and all ELT processes are handled upstream
+- Used **dbt** only for **SQL transformations** and all ETL processes are handled upstream
 
 - Join Google Ads campaign insights fact tables with campaign metadata dim table
+
+- Join Google Ads ad insights fact tables with campaign metadata/ad metadata/ad creative dim tables
 
 - Define final analytical grain and manage model dependencies using `ref()`
 
@@ -16,9 +18,9 @@
 
 ### Activate Python venv
 
-- Create Python virtual environment with Python 3.13 interpreter if `venv\` folder not exists
+- Create Python virtual environment if `venv\` folder not exists
 ```bash
-& "C:\Users\ADMIN\AppData\Local\Programs\Python\Python313\python.exe" -m venv venv
+python -m venv venv
 ```
 
 - Activate Python virtual environment and check `(venv)` in the terminal
@@ -52,7 +54,7 @@ dbt --version
 ```bash
 {{ config(
     materialized='ephemeral',
-    tags=['stg', 'campaign']
+    tags=['stg', 'google', 'campaign']
 ) }}
 ```
 
@@ -60,7 +62,7 @@ dbt --version
 ```bash
 {{ config(
     materialized='ephemeral',
-    tags=['stg', 'campaign']
+    tags=['int', 'google', 'campaign']
 ) }}
 ```
 
@@ -68,7 +70,7 @@ dbt --version
 ```bash
 {{ config(
     materialized='table',
-    tags=['stg', 'campaign']
+    tags=['mart', 'google', 'campaign']
 ) }}
 ```
 
@@ -96,7 +98,7 @@ dbt compile
 dbt build
 ```
 
-- Run only budget reconciliation
+- Run only campaign insights
 ```bash
 $env:PROJECT="your-gcp-project"
 $env:COMPANY="your-company-in-short"
@@ -106,15 +108,17 @@ $env:ACCOUNT="your-account"
 dbt build `
   --project-dir dbt `
   --profiles-dir dbt `
-  --select tag:mart
+  --select tag:campaign
 ```
+
+---
 
 ### Deployment with DAGs
 
 - Using Python `subprocess` to call dbt for each stream
 ```bash
-dbt_budget_reconcilie(
+dbt_google_ads(
     google_cloud_project=PROJECT,
-    select="tag:mart",
+    select="campaign",
 )
 ```
