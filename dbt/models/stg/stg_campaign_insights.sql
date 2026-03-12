@@ -14,7 +14,7 @@
     {% set tables_query %}
         select table_name
         from `{{ target.project }}.{{ raw_schema }}.INFORMATION_SCHEMA.TABLES`
-        where table_name like '{{ table_prefix }}m______'
+        where table_name like '{{ table_prefix }}m_______'
     {% endset %}
 
     {% set results = run_query(tables_query) %}
