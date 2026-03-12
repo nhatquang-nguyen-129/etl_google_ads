@@ -50,6 +50,7 @@ def extract_campaign_metadata(
     }
 
     try:
+        
         print(
             "🔍 [EXTRACT] Initializing Google Ads client for customer_id "
             f"{customer_id}..."

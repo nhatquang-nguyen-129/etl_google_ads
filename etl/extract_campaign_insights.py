@@ -57,10 +57,14 @@ def extract_campaign_insights(
     
     except Exception as e:
         
-        raise RuntimeError(
+        error = RuntimeError(
             "❌ [EXTRACT] Failed to initialize Google Ads client due to "
             f"{e}."
-        ) from e
+        )
+        
+        error.retryable = False
+        
+        raise error from e
 
 # Make Google Ads API call for campaign insights
     rows: List[dict] = []
