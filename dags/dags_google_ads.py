@@ -14,6 +14,7 @@ from etl.transform_campaign_insights import transform_campaign_insights
 from etl.transform_campaign_metadata import transform_campaign_metadata
 from etl.load_campaign_insights import load_campaign_insights
 from etl.load_campaign_metadata import load_campaign_metadata
+
 from dbt.run import dbt_google_ads
 
 COMPANY = os.getenv("COMPANY")
