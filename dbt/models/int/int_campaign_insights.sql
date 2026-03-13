@@ -10,6 +10,9 @@ select
     month,
     year,
 
+    insights.department,
+    insights.account,    
+    
     insights.customer_id,
     insights.campaign_id,
     
