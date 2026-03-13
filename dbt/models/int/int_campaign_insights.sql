@@ -1,39 +1,46 @@
-{{ config(materialized='ephemeral') }}
+{{ 
+  config(
+    materialized = 'ephemeral',
+    tags = ['int', 'google', 'campaign']
+  ) 
+}}
 
 select
     date,
     month,
     year,
 
-    i.customer_id,
-    i.campaign_id,
+    insights.department,
+    insights.account,    
+    
+    insights.customer_id,
+    insights.campaign_id,
+    
+    insights.impressions,
+    insights.clicks,
+    insights.spend,
+    insights.conversions,
+    insights.conversion_value,
 
-    m.campaign_name,
+    campaign.campaign_name,
 
     case
-        when m.campaign_status = 'ENABLED' then '🟢'
-        when m.campaign_status = 'PAUSED'  then '⚪'
-        when m.campaign_status = 'REMOVED' then '🔴'
+        when campaign.campaign_status = 'ENABLED' then '🟢'
+        when campaign.campaign_status = 'PAUSED'  then '⚪'
+        when campaign.campaign_status = 'REMOVED' then '🔴'
         else '❓'
     end as campaign_status,
 
-    m.platform,
-    m.objective,
-    m.budget_group_1,
-    m.budget_group_2,
-    m.region,
-    m.category_level_1,
-    m.track_group,
-    m.pillar_group,
-    m.content_group,
+    campaign.platform,
+    campaign.objective,
+    campaign.budget_group,
+    campaign.region,
+    campaign.category_level_1,
+    campaign.track,
+    campaign.pillar,
+    campaign.`group`
 
-    i.impressions,
-    i.clicks,
-    i.spend,
-    i.conversions,
-    i.conversion_value
-
-from {{ ref('stg_campaign_insights') }} i
-left join `{{ target.project }}.{{ var('company') }}_dataset_google_api_raw.{{ var('company') }}_table_google_{{ var('department') }}_{{ var('account') }}_campaign_metadata` m
-    on i.customer_id = m.customer_id
-   and i.campaign_id = m.campaign_id
+from {{ ref('stg_campaign_insights') }} insights
+left join `{{ target.project }}.{{ var('company') }}_dataset_google_api_raw.{{ var('company') }}_table_google_{{ var('department') }}_{{ var('account') }}_campaign_metadata` campaign
+    on insights.customer_id = campaign.customer_id
+   and insights.campaign_id = campaign.campaign_id

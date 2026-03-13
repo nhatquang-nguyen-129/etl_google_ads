@@ -5,7 +5,8 @@
       "field": "date",
       "data_type": "date"
     },
-    cluster_by = ["customer_id", "campaign_id"]
+    cluster_by = ["customer_id", "campaign_id"],
+    tags = ['mart', 'google', 'campaign']
   ) 
 }}
 
@@ -13,23 +14,27 @@ select
     date,
     month,
     year,
+
+    department,
+    account,
     
     customer_id,
     campaign_id,
     campaign_name,
     campaign_status,
+
     impressions,
     clicks,
     spend,
     conversions,
     conversion_value,
+
     platform,
     objective,
-    budget_group_1,
-    budget_group_2,
     region,
+    budget_group,
     category_level_1,
-    track_group,
-    pillar_group,
-    content_group
+    track,
+    pillar,
+    `group`
 from {{ ref('int_campaign_insights') }}
