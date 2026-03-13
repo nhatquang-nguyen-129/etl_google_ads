@@ -6,6 +6,9 @@
 }}
 
 {% set company = var('company') %}
+{% set department = var('department') %}
+{% set account = var('account') %}
+
 {% set raw_schema = company ~ '_dataset_google_api_raw' %}
 {% set table_prefix = company ~ '_table_google_' ~ department ~ '_' ~ account ~ '_campaign_' %}
 
