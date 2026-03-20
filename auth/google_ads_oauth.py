@@ -10,7 +10,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 # Default Google Ads scopes
 SCOPES = ["https://www.googleapis.com/auth/adwords"]
 
-# Put your OAuth client secret desktop app location here
+# Put your OAuth client secret desktop app location in auth folder
 GCP_OAUTH2_CLIENT_SECRET_FILE = Path(__file__).resolve().parent / "oauth2_desktop_client.json"
 
 # Put your Google Ads MCC Developer Token here
