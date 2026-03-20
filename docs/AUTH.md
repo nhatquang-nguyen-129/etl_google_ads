@@ -81,7 +81,7 @@ Successfully generated credential payload:
 
 - Re-run `google_ads_oauth.py` to get assembled single payload credentials
 ```bash
-python google_ads_oauth.py
+python auth/google_ads_oauth.py
 ```
 
 - Script opens browser for OAuth consent and example console output below:
