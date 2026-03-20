@@ -25,7 +25,7 @@ def extract_campaign_metadata(
         5. Enforce List[dict] to DataFrame
     ---
     Returns:
-        1. DataFrame:
+        1. pandas.DataFrame:
             Flattened campaign metadata records
     """
 
@@ -194,7 +194,7 @@ def extract_campaign_metadata(
         
         raise error from e
 
-    # Unknown non-retryable error
+        # Unknown non-retryable error
     except Exception as e:
         
         error = RuntimeError(
