@@ -27,7 +27,7 @@ def extract_campaign_insights(
         5. Enforce List[dict] to DataFrame
     ---
     Returns:
-        1. DataFrame:
+        1. pandas.DataFrame:
             Flattened campaign insight records
     """
 
@@ -66,7 +66,7 @@ def extract_campaign_insights(
         
         raise error from e
 
-# Make Google Ads API call for campaign insights
+    # Make Google Ads API call for campaign insights
     rows: List[dict] = []
     
     batch_count = 0 
