@@ -35,7 +35,7 @@ def load_campaign_insights(
         return
 
     print(
-        "🔄 [LOADER] Triggering to load Google Ads campaign insight with "
+        "🔄 [LOADER] Loading Google Ads campaign insight with "
         f"{len(df)} row(s) to Google BigQuery table "
         f"{direction}..."
         )

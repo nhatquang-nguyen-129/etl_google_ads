@@ -10,14 +10,14 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 # Default Google Ads scopes
 SCOPES = ["https://www.googleapis.com/auth/adwords"]
 
-# Put your OAuth client secret desktop app location here
+# Put your OAuth client secret desktop app location in auth folder
 GCP_OAUTH2_CLIENT_SECRET_FILE = Path(__file__).resolve().parent / "oauth2_desktop_client.json"
 
 # Put your Google Ads MCC Developer Token here
-GOOGLE_ADS_MCC_DEVELOPER_TOKEN = "EWM3cbV4ggotWwRixrHg_w"
+GOOGLE_ADS_MCC_DEVELOPER_TOKEN = "PUT-YOUR-GOOGLE-ADS-DEVELOPER-TOKEN-HERE"
 
 # Put your Google Ads MCC numbers only no dashes customer ID here
-GOOGLE_ADS_MCC_CUSTOMER_ID = "3394321584"
+GOOGLE_ADS_MCC_CUSTOMER_ID = "PUT-YOUR-GOOGLE-ADS-MCC-NUMBERS-WITH-NO-DASHES-HERE"
 
 def internal_bootstrap_oauth():
     """

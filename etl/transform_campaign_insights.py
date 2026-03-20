@@ -19,7 +19,7 @@ def transform_campaign_insights(
         5. Enforce numeric schema
     ---
     Returns:
-        1. DataFrame:
+        1. pandas.DataFrame:
             Enforced campaign insights records
     """
 

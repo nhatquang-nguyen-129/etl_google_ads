@@ -35,7 +35,7 @@ def load_campaign_metadata(
         return
 
     print(
-        "🔄 [LOADER] Triggering to load Google Ads campaign metadata "
+        "🔄 [LOADER] Loading Google Ads campaign metadata "
         f"{len(df)} row(s) to Google BigQuery table "
         f"{direction}..."
         )

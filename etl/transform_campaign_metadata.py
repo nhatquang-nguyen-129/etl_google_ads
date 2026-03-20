@@ -19,7 +19,7 @@ def transform_campaign_metadata(
         5. Enrich Dataframe
     ---
     Returns:
-        1. DataFrame:
+        1. pandas.DataFrame:
             Enforced campaign metadata records
     """
 
