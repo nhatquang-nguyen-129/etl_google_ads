@@ -14,11 +14,8 @@ from google.api_core.client_options import ClientOptions
 from dags.dags_google_ads import dags_google_ads
 
 COMPANY = os.getenv("COMPANY")
-
 PROJECT = os.getenv("PROJECT")
-
 DEPARTMENT = os.getenv("DEPARTMENT")
-
 ACCOUNT = os.getenv("ACCOUNT")
 
 if not all([
@@ -27,6 +24,7 @@ if not all([
     DEPARTMENT,
     ACCOUNT,
 ]):
+   
     raise EnvironmentError(
         "❌ [BACKFILL] Failed to execute Google Ads backfill due to missing required environment variables."
     )
@@ -46,7 +44,7 @@ def backfill():
         None
     """
 
-# CLI arguments parser for manual date range
+    # CLI arguments parser for manual date range
     parser = argparse.ArgumentParser(
         description="Manual Google Ads ETL executor"
     )
@@ -93,7 +91,7 @@ def backfill():
         f"{PROJECT}..."
     )
 
-# Initialize Google Secret Manager
+    # Initialize Google Secret Manager
     try:
         
         print(
@@ -117,12 +115,13 @@ def backfill():
             f"{e}."
         )
         
-# Resolve customer_id from Google Secret Manager
+    # Resolve customer_id from Google Secret Manager
     try:
 
         secret_customer_id = (
             f"{COMPANY}_secret_{DEPARTMENT}_google_account_id_{ACCOUNT}"
         )
+        
         secret_customer_name = (
             f"projects/{PROJECT}/secrets/{secret_customer_id}/versions/latest"
         )        
@@ -156,12 +155,13 @@ def backfill():
             f"{e}."
         )
 
-# Resolve JSON credentials from Google Secret Manager
+    # Resolve JSON credentials from Google Secret Manager
     try:       
 
         secret_credentials_json = (
             f"{COMPANY}_secret_all_google_token_access_user"
         )
+    
         secret_credentials_name = (
             f"projects/{PROJECT}/secrets/{secret_credentials_json}/versions/latest"
         )
@@ -190,7 +190,7 @@ def backfill():
             f"{e}."
         )        
 
-# Execute DAGs
+    # Execute DAGs
     dags_google_ads(
         google_ads_credentials=google_ads_credentials,
         customer_id=google_customer_id,
@@ -198,7 +198,7 @@ def backfill():
         end_date=end_date
     )
 
-# Entrypoint
+    # Entrypoint
 if __name__ == "__main__":
     
     try:
