@@ -47,10 +47,10 @@ python auth/google_ads_oauth.py
 ```text
 Successfully generated credential payload:
 {
-  "developer_token": "AIzaSyD-EXAMPLE-DEVELOPER-TOKEN",
-  "client_id": "1234567890-abcdefg.apps.googleusercontent.com",
-  "client_secret": "GOCSPX-EXAMPLE-CLIENT-SECRET",
-  "refresh_token": "1//0gEXAMPLE_REFRESH_TOKEN_LONG_STRING",
+  "developer_token": "EXAMPLE-DEVELOPER-TOKEN",
+  "client_id": "EAMPLE-CLIENT-ID.apps.googleusercontent.com",
+  "client_secret": "EXAMPLE-CLIENT-SECRET",
+  "refresh_token": "EXAMPLE_REFRESH_TOKEN_LONG_STRING",
   "login_customer_id": "1234567890"
 }
 ```
@@ -88,10 +88,10 @@ python auth/google_ads_oauth.py
 ```text
 Successfully generated credential payload:
 {
-  "developer_token": "AIzaSyD-EXAMPLE-DEVELOPER-TOKEN",
-  "client_id": "1234567890-abcdefg.apps.googleusercontent.com",
-  "client_secret": "GOCSPX-EXAMPLE-CLIENT-SECRET",
-  "refresh_token": "1//0gEXAMPLE_REFRESH_TOKEN_LONG_STRING",
+  "developer_token": "EXAMPLE-DEVELOPER-TOKEN",
+  "client_id": "EAMPLE-CLIENT-ID.apps.googleusercontent.com",
+  "client_secret": "EXAMPLE-CLIENT-SECRET",
+  "refresh_token": "EXAMPLE_REFRESH_TOKEN_LONG_STRING",
   "login_customer_id": "1234567890"
 }
 ```
