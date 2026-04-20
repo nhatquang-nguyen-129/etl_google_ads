@@ -23,5 +23,5 @@ $env:COMPANY="your-company-in-short"
 $env:DEPARTMENT="your-department"
 $env:ACCOUNT="your-account"
 
-python -m backfill.backfill_google_ads --start_date=2026-01-05 --end_date=2026-01-05
+python -m backfill.backfill_google_ads --start_date=YYYY-MM-DD --end_date=YYYY-MM-DD
 ```
