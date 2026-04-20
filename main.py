@@ -14,13 +14,9 @@ from google.api_core.client_options import ClientOptions
 from dags.dags_google_ads import dags_google_ads
 
 COMPANY = os.getenv("COMPANY")
-
 PROJECT = os.getenv("PROJECT")
-
 DEPARTMENT = os.getenv("DEPARTMENT")
-
 ACCOUNT = os.getenv("ACCOUNT")
-
 MODE = os.getenv("MODE")
 
 if not all([
@@ -30,6 +26,7 @@ if not all([
     ACCOUNT,
     MODE
 ]):
+
     raise EnvironmentError(
         "❌ [MAIN] Failed to execute Google Ads main entrypoint due to missing required environment variables."
     )
@@ -58,7 +55,7 @@ def main():
         f"{PROJECT}..."
     ) 
 
-# Resolve input time range
+    # Resolve input time range
     ICT = ZoneInfo("Asia/Ho_Chi_Minh")
     
     today = datetime.now(ICT)
@@ -94,10 +91,11 @@ def main():
         end_date = last_month_end.strftime("%Y-%m-%d")
 
     else:
-        
+
         raise ValueError(
-            "❌ [MAIN] Failed to execute Google Ads main entrypoint due to unsupported mode "
-            f"{MODE}.")
+            "⚠️ [MAIN] Failed to trigger Google Ads main entrypoint due to unsupported mode "
+            f"{MODE}."
+        )
     
     print(
         "✅ [MAIN] Successfully resolved "
@@ -106,7 +104,7 @@ def main():
         f"{end_date}."
     )
 
-# Initialize Google Secret Manager
+    # Initialize Google Secret Manager
     try:
         
         print(
@@ -130,7 +128,7 @@ def main():
             f"{e}."
         )
         
-# Resolve customer_id from Google Secret Manager
+    # Resolve customer_id from Google Secret Manager
     secret_customer_id = (
         f"{COMPANY}_secret_{DEPARTMENT}_google_account_id_{ACCOUNT}"
     )
@@ -170,7 +168,7 @@ def main():
             f"{e}."
         )
 
-# Resolve JSON credentials from Google Secret Manager
+    # Resolve JSON credentials from Google Secret Manager
     secret_credentials_json = (
         f"{COMPANY}_secret_all_google_token_access_user"
     )
@@ -205,7 +203,7 @@ def main():
             f"{e}."
         )        
 
-# Execute DAGs
+    # Execute DAGs
     dags_google_ads(
         google_ads_credentials=google_ads_credentials,
         customer_id=google_customer_id,
@@ -213,7 +211,7 @@ def main():
         end_date=end_date
     )
 
-# Entrypoint
+    # Entrypoint
 if __name__ == "__main__":
     
     try:
