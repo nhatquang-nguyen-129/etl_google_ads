@@ -6,6 +6,7 @@ sys.path.append(str(ROOT_FOLDER_LOCATION))
 
 from datetime import datetime, timedelta
 import json
+import traceback
 from zoneinfo import ZoneInfo
 
 from google.cloud import secretmanager
@@ -218,6 +219,10 @@ if __name__ == "__main__":
     
         main()
     
-    except Exception:
-    
+    except Exception as e:
+        
+        print(f"{e}")
+        
+        traceback.print_exc()
+        
         sys.exit(1)
