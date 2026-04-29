@@ -22,7 +22,7 @@ class internalGoogleBigqueryLoader:
         2. Check dataset existence
         3. Check table existence
         4. Apply INSERT/UPSERT DML
-        5. Writer data into table
+        5. Write data into table
     ---
     Returns:
         None
