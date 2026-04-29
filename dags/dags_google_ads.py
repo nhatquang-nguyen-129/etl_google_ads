@@ -205,7 +205,7 @@ def dags_google_ads(
         df_campaign_metadata = extract_campaign_metadata(
             google_ads_credentials=google_ads_credentials,
             customer_id=customer_id,
-            campaign_ids=remaining_campaign_ids,
+            campaign_id_list=remaining_campaign_ids,
         )
 
         if not df_campaign_metadata.empty:

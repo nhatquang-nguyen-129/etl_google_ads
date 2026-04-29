@@ -296,16 +296,21 @@ class internalGoogleBigqueryLoader:
 
                                 else:
 
-                                    numeric_ratio = pd.to_numeric(sample_str, errors="coerce").notna().mean()
-
-                                    if numeric_ratio > 0.95:
-
-                                        bq_type = "FLOAT64"
-
+                                    # Infer FLOAT if explicit decimal pattern
+                                    if sample_str.str.contains(r"\.").any():
+                                        
+                                        try:
+                                        
+                                            sample_str.astype(float)
+                                        
+                                            bq_type = "FLOAT64"
+                                        
+                                        except:
+                                        
+                                            bq_type = "STRING"
                                     else:
-
+                                        
                                         bq_type = "STRING"
-
                         else:
 
                             bq_type = "STRING"
