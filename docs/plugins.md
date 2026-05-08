@@ -58,7 +58,7 @@
 
 ### Create table if missing
 
-- The loader uutomatically maps pandas dtypes to Google BigQuery types with `_infer_df_schema()`
+- The loader automatically maps pandas dtypes to Google BigQuery types with `_infer_df_schema()`
 
 - The loader automatically maps pandas dtype `int` to Google BigQuery type `INT64`
 
