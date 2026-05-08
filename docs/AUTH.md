@@ -1,4 +1,4 @@
-# Google Ads Bootstrap for Authentication
+# Authentication for Google Ads
 
 ## Purpose
 
@@ -6,7 +6,11 @@
 
 - Generate a reusable Google Ads credentials payload which only needs to be run only **ONCE**
 
-- Enable **non-interactive** access in production environments
+- Use manual login with **Application Default Credentials** for local environment
+
+- Use **Service Account** authentication to manage permissions in cloud environments
+
+- Use centralized **Google Cloud Project** with required APIs enabled for cloud deployment
 
 ---
 
@@ -18,11 +22,11 @@
 
 - Google Cloud Project with enabled **Google Ads API**
 
-- Google Account with access to Google Ads MCC
+- Google Account with access to **Google Ads MCC**
 
 - OAuth Client ID from a Google Cloud **Desktop App**
 
-- Downloaded JSON secret client at OAuth2 App creation time 
+- Downloaded **JSON secret client** at OAuth2 App creation time 
 
 ---
 
