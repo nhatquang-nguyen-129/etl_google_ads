@@ -45,7 +45,7 @@ def dags_google_ads(
     """
 
     print(
-        "🔄 [DAGS] Trigger to update Google Ads campaign insights with customer_id "
+        "🔄 [DAGS] Trigger to update Google Ads campaign insights for customer_id "
         f"{customer_id} from "
         f"{start_date} to "
         f"{end_date}..."
@@ -91,7 +91,7 @@ def dags_google_ads(
 
         # Transform
                 print(
-                    "🔄 [DAGS] Trigger to transform Google Ads campaign insights from "
+                    "🔄 [DAGS] Trigger to transform Google Ads campaign insights from customer_id "
                     f"{customer_id} for "
                     f"{dags_split_date} with "
                     f"{len(insights)} row(s)..."
@@ -133,7 +133,8 @@ def dags_google_ads(
                 retryable = getattr(e, "retryable", False)
                 
                 print(
-                    f"⚠️ [DAGS] Failed to trigger Google Ads campaign insights extraction for "
+                    f"⚠️ [DAGS] Failed to trigger Google Ads campaign insights extraction from customer_id "
+                    f"{customer_id} for "
                     f"{dags_split_date} with "
                     f"{attempt}/{DAGS_INSIGHTS_ATTEMPTS} attempts due to "
                     f"{e}."
@@ -142,14 +143,16 @@ def dags_google_ads(
                 if not retryable:
                     
                     raise RuntimeError(
-                        f"❌ [DAGS] Failed to trigger Google Ads campaign insights extraction for "
+                        f"❌ [DAGS] Failed to trigger Google Ads campaign insights extraction from customer_id "
+                        f"{customer_id} for "
                         f"{dags_split_date} due to non-retryable error then DAG execution will be suspended."
                     ) from e
 
                 if attempt == DAGS_INSIGHTS_ATTEMPTS:
                     
                     raise RuntimeError(
-                        "❌ [DAGS] Failed to trigger Google Ads campaign insights extraction for "
+                        "❌ [DAGS] Failed to trigger Google Ads campaign insights extraction from customer_id "
+                        f"{customer_id} for "
                         f"{dags_split_date} with "
                         f"{attempt}/{DAGS_INSIGHTS_ATTEMPTS} attempts due to exceeded attempt limit then DAG execution will be suspended."
                     ) from e
@@ -170,7 +173,7 @@ def dags_google_ads(
             
             print(
                 "🔄 [DAGS] Waiting "
-                f"{DAGS_INSIGHTS_COOLDOWN} second(s) cooldown before processing next date of Google Ads campaign insights extraction..."
+                f"{DAGS_INSIGHTS_COOLDOWN} second(s) cooldown before processing next date of Google Ads campaign insights..."
             )
 
             time.sleep(DAGS_INSIGHTS_COOLDOWN)
@@ -181,7 +184,7 @@ def dags_google_ads(
     if not total_campaign_ids:
         
         print(
-            "⚠️ [DAGS] Failed to trigger Google Ads campaign metadata extraction for "
+            "⚠️ [DAGS] Failed to trigger Google Ads campaign metadata extraction for customer_id "
             f"{customer_id} from "
             f"{start_date} to "
             f"{end_date} due to no campaign_id appended then DAG execution will be suspended."
@@ -197,7 +200,8 @@ def dags_google_ads(
 
         # Extract
         print(
-            "🔄 [DAGS] Trigger to extract Google Ads campaign metadata for "
+            "🔄 [DAGS] Trigger to extract Google Ads campaign metadata from customer_id "
+            f"{customer_id} for "
             f"{len(remaining_campaign_ids)} campaign_id(s) with "
             f"{attempt}/{DAGS_CAMPAIGN_ATTEMPTS} attempt(s)..."
         )
@@ -219,7 +223,8 @@ def dags_google_ads(
         if not failed_campaign_ids:
       
             print(
-                "✅ [DAGS] Successfully triggered Google Ads campaign metadata extraction with "
+                "✅ [DAGS] Successfully triggered to extract Google Ads campaign metadata from customer_id "
+                f"{customer_id} with "
                 f"{len(set(pd.concat(dfs_campaign_metadata)["campaign_id"].dropna()))}/{len(remaining_campaign_ids)} row(s)."
             )
             
@@ -228,7 +233,8 @@ def dags_google_ads(
         if not retryable:
             
             print(
-                "❌ [DAGS] Failed to trigger Google Ads campaign metadata extraction for "
+                "❌ [DAGS] Failed to trigger Google Ads campaign metadata extraction from customer_id "
+                f"{customer_id} for "
                 f"{len(remaining_campaign_ids)} campaign_id(s) due to non-retryable error then DAG execution will be suspended."
             )
             
@@ -237,7 +243,8 @@ def dags_google_ads(
         if attempt == DAGS_CAMPAIGN_ATTEMPTS:
             
             print(
-                "❌ [DAGS] Failed to trigger Google Ads campaign metadata extraction for "
+                "❌ [DAGS] Failed to trigger Google Ads campaign metadata extraction from customer_id "
+                f"{customer_id} for "
                 f"{len(remaining_campaign_ids)} campaign_id(s) due to exceeded attempt limit then DAG execution will be suspended."
             )
             
@@ -290,5 +297,5 @@ def dags_google_ads(
     
     dbt_google_ads(
         google_cloud_project=PROJECT,
-        select="tag:mart,tag:campaign",
+        select="tag:campaign",
     )
